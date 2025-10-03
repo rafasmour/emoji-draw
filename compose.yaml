@@ -1,0 +1,70 @@
+services:
+  laravel.test:
+    build:
+      context: './vendor/laravel/sail/runtimes/8.4'
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP}'
+    image: 'sail-8.4/app'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.emoji-draw.rule=Host(`emoji-draw.${DOMAIN}`)
+      - traefik.http.routers.emoji-draw.entrypoints=websecure
+      - traefik.http.routers.emoji-draw.tls=true
+    environment:
+      WWWUSER: '${WWWUSER}'
+      LARAVEL_SAIL: 1
+      XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+      XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+      IGNITION_LOCAL_SITES_PATH: '${PWD}'
+    volumes:
+      - '.:/var/www/html'
+    networks:
+      - webgateway
+    depends_on:
+      - mongodb
+  mongodb:
+    image: mongo:8.0
+    env_file: ".env"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MONGODB_DB: ${DB_DATABASE}
+      MONGODB_USER: ${DB_USERNAME}
+      MONGODB_PASS: ${DB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DB_ROOT_DATABASE}
+    networks:
+      - webgateway
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - sail-mongodb:/data/db
+      - ./database/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+  mongo-express:
+    image: mongo-express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_URL: ${DB_ROOT_URI}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.emoji-db.rule=Host(`emoji-db.${DOMAIN}`)
+      - traefik.http.routers.emoji-db.entrypoints=websecure
+      - traefik.http.routers.emoji-db.tls=true
+
+    networks:
+      - webgateway
+    depends_on:
+      - mongodb
+networks:
+  webgateway:
+    external: true
+volumes:
+  sail-mongodb:
+    driver: local
