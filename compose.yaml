@@ -23,6 +23,7 @@ services:
       - '.:/var/www/html'
     networks:
       - webgateway
+      - default
     depends_on:
       - mongodb
   mongodb:
@@ -36,7 +37,7 @@ services:
       MONGODB_PASS: ${DB_PASSWORD}
       MONGO_INITDB_DATABASE: ${DB_ROOT_DATABASE}
     networks:
-      - webgateway
+      - default
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh --quiet
       interval: 30s
@@ -60,6 +61,7 @@ services:
 
     networks:
       - webgateway
+      - default
     depends_on:
       - mongodb
 networks:
