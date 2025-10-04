@@ -13,6 +13,7 @@ services:
       - traefik.http.routers.emoji-draw.rule=Host(`emoji-draw.${DOMAIN}`)
       - traefik.http.routers.emoji-draw.entrypoints=websecure
       - traefik.http.routers.emoji-draw.tls=true
+      - traefik.docker.network=webgateway
     environment:
       WWWUSER: '${WWWUSER}'
       LARAVEL_SAIL: 1
@@ -21,6 +22,7 @@ services:
       IGNITION_LOCAL_SITES_PATH: '${PWD}'
     volumes:
       - '.:/var/www/html'
+
     networks:
       - webgateway
       - default
@@ -58,6 +60,7 @@ services:
       - traefik.http.routers.emoji-db.rule=Host(`emoji-db.${DOMAIN}`)
       - traefik.http.routers.emoji-db.entrypoints=websecure
       - traefik.http.routers.emoji-db.tls=true
+      - traefik.docker.network=webgateway
 
     networks:
       - webgateway
