@@ -37,7 +37,14 @@ export default defineConfig({
     server: {
         cors: true,
         host: viteIP,
-        hmr: true
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            host: viteIP,
+            protocol: 'wss',
+            port: 5173,
+            clientPort: 443,
+        }
     },
     esbuild: {
         jsx: 'automatic',
