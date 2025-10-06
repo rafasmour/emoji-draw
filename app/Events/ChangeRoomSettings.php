@@ -10,18 +10,14 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class InviteUrl
+class ChangeRoomSettings
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(
-        readonly string $url,
-        readonly Room $room,
-        readonly User $user,
-    )
+    public function __construct()
     {
         //
     }
@@ -34,14 +30,7 @@ class InviteUrl
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->id}.{$this->user->id}.inviteUrl"),
-        ];
-    }
-
-    public function broadcastWith(): array
-    {
-        return [
-            'url' => $this->url,
+            new PrivateChannel('channel-name'),
         ];
     }
 }

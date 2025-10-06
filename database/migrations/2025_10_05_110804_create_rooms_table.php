@@ -19,6 +19,8 @@ return new class extends Migration
             $table->json('canvasStrokes');
             $table->string('owner');
             $table->boolean('started')->default(false);
+            $table->json('chat');
+            $table->json('state');
             $table->timestamps();
         });
     }
