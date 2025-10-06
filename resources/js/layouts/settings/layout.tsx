@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editPassword } from '@/routes/password';
 import { edit } from '@/routes/profile';
+import { edit as editPreferences } from '@/actions/App/Http/Controllers/Settings/PreferencesController';
 import { show } from '@/routes/two-factor';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -31,6 +32,12 @@ const sidebarNavItems: NavItem[] = [
         href: editAppearance(),
         icon: null,
     },
+    {
+        title: 'Preferences',
+        href: editPreferences(),
+        icon: null,
+    }
+
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

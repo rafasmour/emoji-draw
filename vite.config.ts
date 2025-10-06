@@ -9,7 +9,10 @@ function getIPv4(): string | undefined {
     const ifaces = os.networkInterfaces();
     for (const entries of Object.values(ifaces)) {
         for (const i of entries ?? []) {
-            if (i.family === 'IPv4' && !i.internal) return i.address;
+            if (i.family === 'IPv4' && !i.internal) {
+                return i.address;
+
+            }
         }
     }
     return undefined;
@@ -25,7 +28,7 @@ export default defineConfig({
         }),
         viteBasicSslPlugin({
             certDir: "./certs",
-            domains: [process.env.APP_URL ?? "localhost"],
+            domains: [process.env.APP_URL ?? "localhost", viteIP],
             name: "laravel-react-starter-kit",
         }),
         react(),
@@ -42,8 +45,7 @@ export default defineConfig({
         hmr: {
             host: viteIP,
             protocol: 'wss',
-            port: 5173,
-            clientPort: 443,
+            port: 5173
         }
     },
     esbuild: {

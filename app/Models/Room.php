@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
 
 class Room extends Model
 {
+    use InteractsWithSockets;
     protected $connection = 'mongodb';
 
     protected $fillable = [

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->json('settings');
+            $table->json('preferences');
             $table->json('score');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
