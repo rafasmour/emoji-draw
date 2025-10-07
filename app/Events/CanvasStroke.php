@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -17,9 +18,12 @@ class CanvasStroke
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        private Room $room,
+        public array $canvas,
+    )
     {
-        //
+        $this->canvas = $room->canvas;
     }
 
     /**
@@ -30,7 +34,7 @@ class CanvasStroke
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}.canvasStroke"),
         ];
     }
 }

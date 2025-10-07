@@ -6,12 +6,14 @@ use App\Events\Join;
 use App\Events\Leave;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
+use App\UserInRoom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Response;
 
-class JoinLeaveController extends Controller
+class RoomEntranceController extends Controller
 {
+    use UserInRoom;
     public function join(Request $request, Room $room)
     {
         if ($room->users->count() === $room->settings['cap']) {
@@ -37,7 +39,7 @@ class JoinLeaveController extends Controller
         ->filter(fn($roomUser) => $roomUser['id'] !== $user->id)
         ->values()
         ->toArray();
-        if(count($newUsers) === count($room->$newUsers)) {
+        if(count($newUsers) === count($room->users)) {
             return \response()->json(['message' => 'user not found'], 404);
         }
         $room->users = $newUsers;

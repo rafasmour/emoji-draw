@@ -15,12 +15,22 @@ class ChangeOwner
     /**
      * Create a new event instance.
      */
+    public string $new_owner_id;
+    public string $new_owner_name;
+    public string $old_owner_id;
+    public string $old_owner_name;
     public function __construct(
-        readonly Room $room,
-        readonly string $new_owner_id,
+        private Room $room,
+        User $new_owner,
+        User $old_owner,
     )
     {
-        //
+        $this->new_owner_id = $new_owner->getKey();
+        $this->new_owner_name = $new_owner->name;
+        $this->old_owner_id = $old_owner->getKey();
+        $this->old_owner_name = $old_owner->name;
+        $this->message = "{$old_owner->name} (owner) has changed to {$new_owner->name}!";
+
     }
 
     /**
@@ -32,13 +42,6 @@ class ChangeOwner
     {
         return [
             new PrivateChannel("room.{$this->room->id}.changeOwner"),
-        ];
-    }
-
-    public function broadcastWith(): array
-    {
-        return [
-            'new_owner_id' => $this->room->owner
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -17,9 +18,13 @@ class CorrectGuess
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        private User $user,
+        private Room $room,
+        public string $message,
+    )
     {
-        //
+        $this->message = "$user->name guessed correctly!";
     }
 
     /**
@@ -30,7 +35,7 @@ class CorrectGuess
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}.chat}"),
         ];
     }
 }

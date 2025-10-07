@@ -2,11 +2,9 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use App\Models\Room;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -17,9 +15,12 @@ class StopGame
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        private Room $room,
+        public string $message,
+    )
     {
-        //
+        $this->message = "The game has been stopped!";
     }
 
     /**
@@ -30,7 +31,7 @@ class StopGame
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}.stopGame"),
         ];
     }
 }

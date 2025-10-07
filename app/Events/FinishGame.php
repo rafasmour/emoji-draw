@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -17,9 +18,12 @@ class FinishGame
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        private Room $room,
+        public string $message,
+    )
     {
-        //
+        $this->message = "The game has finished!";
     }
 
     /**
@@ -30,7 +34,7 @@ class FinishGame
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}.finishGame"),
         ];
     }
 }

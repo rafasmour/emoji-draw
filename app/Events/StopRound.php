@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -17,9 +18,12 @@ class StopRound
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        private Room $room,
+        public string $message,
+    )
     {
-        //
+        $this->message = "The round has been stopped!";
     }
 
     /**

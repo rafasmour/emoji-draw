@@ -19,11 +19,12 @@ class Leave
      * Create a new event instance.
      */
     public function __construct(
-        readonly User $user,
-        readonly Room $room,
+        private User $user,
+        private Room $room,
+        public string $message,
     )
     {
-
+        $this->message = "$user->name left the room!";
     }
 
     /**
@@ -34,14 +35,7 @@ class Leave
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->id}"),
-        ];
-    }
-
-    public function broadcastWith():array
-    {
-        return [
-            'user' => $this->user,
+            new PrivateChannel("room.{$this->room->id}.chat"),
         ];
     }
 }

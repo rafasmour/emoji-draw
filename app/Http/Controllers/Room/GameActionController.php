@@ -2,12 +2,38 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\Events\CanvasStroke;
 use App\Http\Controllers\Controller;
+use App\Models\Room;
+use App\Rules\EmojiOnly;
+use Illuminate\Http\Request;
 
 class GameActionController extends Controller
 {
-    public function index()
+    public function canvas(Request $request, Room $room)
     {
-
+        return $room->canvas;
     }
+
+    public function stroke(Request $request, Room $room)
+    {
+        $validated = $request->validate([
+            'x' => ['required', 'integer', 'min:0', 'max:1000'],
+            'y' => ['required', 'integer', 'min:0', 'max:1000'],
+            'emoji' => ['required', new EmojiOnly],
+            'size' => ['required', 'integer', 'min:1', 'max:100'],
+        ]);
+        $userId = $request->user()->id;
+        $roomUser = array_filter($room->users, fn($usr) => $usr['id'] === $userId)[0];
+        if(!$roomUser['artist']) {
+            return response()->json(['message' => 'not artist'], 403);
+        }
+        $room->canvas[] = [
+            ...$validated,
+        ];
+        $room->save();
+        $room->refresh();
+        broadcast(new CanvasStroke($room));
+    }
+
 }

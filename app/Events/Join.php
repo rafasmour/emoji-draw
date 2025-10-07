@@ -7,11 +7,11 @@ use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class Join implements ShouldBroadcastNow
+class Join implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,11 +19,12 @@ class Join implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public function __construct(
-        readonly User $user,
-        readonly Room $room,
+        private User $user,
+        private Room $room,
+        public string $message,
     )
     {
-
+        $this->message = "$user->name joined the room!";
     }
 
     /**
@@ -34,14 +35,7 @@ class Join implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->id}"),
-        ];
-    }
-
-    public function broadcastWith(): array
-    {
-        return [
-            'user' => $this->user,
+            new PrivateChannel("room.{$this->room->id}.chat"),
         ];
     }
 }

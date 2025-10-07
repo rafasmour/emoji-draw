@@ -17,9 +17,13 @@ class OwnerLeave
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        private User $user,
+        private Room $room,
+        public string $message,
+    )
     {
-        //
+        $this->message = "$user->name (owner) has left the room!";
     }
 
     /**
@@ -30,7 +34,7 @@ class OwnerLeave
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->id}.chat"),
         ];
     }
 }

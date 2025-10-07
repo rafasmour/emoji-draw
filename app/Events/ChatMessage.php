@@ -2,6 +2,8 @@
 
 namespace App\Events;
 
+use App\Models\Room;
+use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -17,9 +19,17 @@ class ChatMessage
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public string $message;
+    public string $user_id;
+    public string $user_name;
+    public function __construct(
+        User $user,
+        private Room $room,
+    )
     {
-        //
+        $this->message = "$user->name: $room->message";
+        $this->user_id = $user->getKey();
+        $this->user_name = $user->getKey();
     }
 
     /**
@@ -30,7 +40,7 @@ class ChatMessage
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}.chat}"),
         ];
     }
 }

@@ -2,24 +2,27 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use App\Models\Room;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GuessTerm
+class RoomPublicChanged
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(
+        public bool  $public,
+        private Room $room,
+        public string $message,
+    )
     {
-        //
+        $status = $this->public ? "public" : "private";
+        $this->message = "The room is now $status!";
     }
 
     /**
@@ -30,7 +33,7 @@ class GuessTerm
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}.chat"),
         ];
     }
 }
