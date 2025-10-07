@@ -16,7 +16,7 @@ class RoomEntranceController extends Controller
     use UserInRoom;
     public function join(Request $request, Room $room)
     {
-        if ($room->users->count() === $room->settings['cap']) {
+        if (count($room->users) === $room->settings['cap']) {
             return \response()->json(['message' => 'Room is full'], 403);
         }
         $room->users[] = [
@@ -26,6 +26,11 @@ class RoomEntranceController extends Controller
             'guesses' => 0,
             'correct_guesses' => 0,
             'artist' => false,
+        ];
+        $room->chat[] = [
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'message' => 'joined room',
         ];
         $room->save();
         broadcast(new Join($request->user(), $room))->toOthers();
@@ -43,7 +48,13 @@ class RoomEntranceController extends Controller
             return \response()->json(['message' => 'user not found'], 404);
         }
         $room->users = $newUsers;
+        $room->chat[] = [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'message' => 'left room',
+        ];
         $room->save();
+
         broadcast(new Leave($user, $room))->toOthers();
         return \response()->json(['message' => 'Left room']);
     }

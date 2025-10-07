@@ -12,7 +12,7 @@ class CreateRoomController extends Controller
         private Room $room,
     )
     {}
-    public function __invoke(Request $request)
+    public function index(Request $request)
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:1', 'max:255', 'unique:rooms,name'],

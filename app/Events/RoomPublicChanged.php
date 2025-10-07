@@ -15,10 +15,10 @@ class RoomPublicChanged
     /**
      * Create a new event instance.
      */
+    public string $message;
     public function __construct(
         public bool  $public,
         private Room $room,
-        public string $message,
     )
     {
         $status = $this->public ? "public" : "private";

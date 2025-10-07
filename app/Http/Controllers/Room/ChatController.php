@@ -21,18 +21,22 @@ class ChatController extends Controller
     public function sendMessage(Request $request, Room $room)
     {
         $validated = $request->validate([
-            'message' => ['required', 'string', 'min:1', 'max:255', ''],
+            'message' => ['required', 'string', 'min:1', 'max:255'],
         ]);
+
+        if($room->started) {
+            return redirect()->route('room.guess', [$room]);
+        }
         $config = HTMLPurifier_Config::createDefault();
         $purifier = new HTMLPurifier($config);
         $message = $purifier->purify($validated['message']);
-
         $room->chat[] = [
-            'user' => $user->name,
+            'user_id' => $this->user_id,
+            'user' => $this->user_name,
             'message' => $message,
         ];
         $room->save();
-        broadcast(new ChatMessage($room, $user, $message))->toOthers();
+        broadcast(new ChatMessage($request->user(), $room, $message));
         return response()->json(['message' => 'Message sent']);
     }
 }

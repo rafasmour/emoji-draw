@@ -33,7 +33,17 @@ class GameActionController extends Controller
         ];
         $room->save();
         $room->refresh();
-        broadcast(new CanvasStroke($room));
+        broadcast(new CanvasStroke($room))->toOthers();
+        return response()->json(['success' => true], 200);
+    }
+
+    public function guess(Request $request, Room $room)
+    {
+        $validated = $request->validate([
+            'guess' => ['required', 'string', 'min:1', 'max:255'],
+        ]);
+
+
     }
 
 }

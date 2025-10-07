@@ -18,10 +18,10 @@ class Leave
     /**
      * Create a new event instance.
      */
+    public string $message;
     public function __construct(
         private User $user,
         private Room $room,
-        public string $message,
     )
     {
         $this->message = "$user->name left the room!";

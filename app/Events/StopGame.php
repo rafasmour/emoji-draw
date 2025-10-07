@@ -15,9 +15,10 @@ class StopGame
     /**
      * Create a new event instance.
      */
+    public string $message;
+
     public function __construct(
         private Room $room,
-        public string $message,
     )
     {
         $this->message = "The game has been stopped!";

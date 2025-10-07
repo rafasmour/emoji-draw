@@ -3,7 +3,6 @@
 namespace App\Events;
 
 use App\Models\Room;
-use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -12,26 +11,18 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ChatMessage
+class ClearChat
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public string $message;
-    public string $user_id;
-    public string $user_name;
     public function __construct(
-        User $user,
         private Room $room,
-        public string $message,
     )
     {
-
-        $this->message = "$user->name: $message";
-        $this->user_id = $user->getKey();
-        $this->user_name = $user->name;
+        //
     }
 
     /**
@@ -42,7 +33,7 @@ class ChatMessage
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.chat}"),
+            new PrivateChannel("room.{$this->room->getKey()}.clearChat}"),
         ];
     }
 }

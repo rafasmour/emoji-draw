@@ -18,9 +18,9 @@ class CanvasStroke
     /**
      * Create a new event instance.
      */
+    public array $canvas;
     public function __construct(
         private Room $room,
-        public array $canvas,
     )
     {
         $this->canvas = $room->canvas;

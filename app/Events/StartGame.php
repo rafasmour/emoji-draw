@@ -18,11 +18,12 @@ class StartGame
     /**
      * Create a new event instance.
      */
+    public string $message;
     public function __construct(
         private Room $room,
     )
     {
-        //
+        $this->message = "The game has started!";
     }
 
     /**

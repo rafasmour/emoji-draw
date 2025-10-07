@@ -19,7 +19,7 @@ class EnsureUserInRoom
     public function handle(Request $request, Closure $next, Room $room): Response
     {
         if(!$this->userInRoom($request->user()->getKey(), $room)) {
-            return redirect()->route('room.rooms', $room);
+            return redirect()->route('room.rooms');
         }
         return $next($request);
     }
