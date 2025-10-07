@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -11,21 +10,16 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class StartGame
+class RoundHandler
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public string $message;
-    public string $room_id;
-    public function __construct(
-        private Room $room,
-    )
+    public function __construct()
     {
-        $this->message = "The game has started!";
-        $this->room_id = $this->room->getKey();
+        //
     }
 
     /**
@@ -36,7 +30,7 @@ class StartGame
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.startGame"),
+            new PrivateChannel('channel-name'),
         ];
     }
 }

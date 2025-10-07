@@ -24,6 +24,8 @@ class User extends Authenticatable
         'password',
         'preferences',
         'score',
+        'guesses',
+        'guess_accuracy',
     ];
 
     /**

@@ -27,6 +27,7 @@ class RoomSettingsController extends Controller
             'timeLimit' => ['integer', 'min:50', 'max:200'],
             'difficulty' => ['array', 'in_array:easy,medium,hard'],
             'categories' => ['array'],
+            'rounds' => ['integer', 'min:1', 'max:10'],
         ]);
         $currentSettings = $room->settings;
         $roomPublicChanged = $validated['public'] !== $currentSettings['public'];

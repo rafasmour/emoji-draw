@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Room;
 
 use App\Events\CanvasStroke;
+use App\Events\CorrectGuess;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Rules\EmojiOnly;
@@ -42,7 +43,14 @@ class GameActionController extends Controller
         $validated = $request->validate([
             'guess' => ['required', 'string', 'min:1', 'max:255'],
         ]);
-
+        $guess = $validated['guess'];
+        $userStats = array_filter($room->users, fn($usr) => $usr['id'] === $request->user()->id)[0];
+        $userStats['guesses']++;
+        if($guess === $room->status->term) {
+            $userStats['correct_guesses'] = $userStats['correct_guesses'] + 1;
+        }
+        $room->save();
+        new CorrectGuess($request->user(), $room);
 
     }
 

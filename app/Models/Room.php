@@ -19,6 +19,7 @@ class Room extends Model
         'settings',
         'canvasStrokes',
         'started',
+        'status',
     ];
     protected $casts = [
         'name' => 'string',
@@ -32,7 +33,6 @@ class Room extends Model
          *      'guesses' => 'int',
          *      'correct_guesses' => 'int',
          *      'drawings_guessed' => 'int',
-         *      'artist' => 'boolean',
          *      'room_token' => 'string',
          *      ...(more to come)
          *   ]
@@ -44,6 +44,7 @@ class Room extends Model
          *  'difficulty' => 'string',
          *  'public' => 'boolean',
          *  'cap' => 'int',
+         *  'rounds' => 'int',
          *  'categories' => 'string[]',
          *  'difficulty' => 'string[]',
          *  'language' => 'string',
@@ -54,6 +55,15 @@ class Room extends Model
         'settings' => 'array',
         'canvasStrokes' => 'array',
         'started' => 'boolean',
+        'artist' => 'string',
+        /*
+         * status: [
+         *  'round' => 'int',
+         *  'time' => 'int',
+         *  'term' => 'string',
+         * ]
+         */
+        'status' => 'array',
     ];
     /** @use HasFactory<\Database\Factories\RoomFactory> */
     use HasFactory;

@@ -4,6 +4,7 @@
 use App\Http\Controllers\Room\ChatController;
 use App\Http\Controllers\Room\CreateRoomController;
 use App\Http\Controllers\Room\GameActionController;
+use App\Http\Controllers\Room\GameInitializerController;
 use App\Http\Controllers\Room\GameViewController;
 use App\Http\Controllers\Room\GetRoomsController;
 use App\Http\Controllers\Room\RoomEntranceController;
@@ -28,6 +29,8 @@ Route::prefix('room')->middleware('auth')->group(function () {
         Route::get('canvas', [GameActionController::class, 'canvas'])->name('room.canvas');
         Route::post('canvas', [GameActionController::class, 'stroke'])->name('room.stroke');
         Route::post('guess', [GameActionController::class, 'guess'])->name('room.guess');
+        Route::post('start', [GameInitializerController::class, 'start'])->name('room.start');
+        Route::post('stop', [GameInitializerController::class, 'stop'])->name('room.stop');
    });
 
 });

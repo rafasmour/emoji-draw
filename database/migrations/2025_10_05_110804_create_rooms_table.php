@@ -21,7 +21,12 @@ return new class extends Migration
             $table->boolean('started')->default(false);
             $table->json('chat');
             $table->json('state');
+            $table->string('artist');
             $table->timestamps();
+            $table->index(['id'], 'id_index');
+            $table->index(['name'], 'name_index');
+            $table->index(['owner'], 'owner_index');
+            $table->index(['settings.public'], 'public_room_index');
         });
     }
 

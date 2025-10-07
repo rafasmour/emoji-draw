@@ -8,7 +8,6 @@ trait UserInRoom
 {
     public function userInRoom(string $userId, Room $room): bool
     {
-        $userId = $request->user()->id;
         $userIds = array_map(fn($usr) => $usr['id'], $room->users);
         return in_array($userId, $userIds);
     }

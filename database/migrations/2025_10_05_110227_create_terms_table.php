@@ -19,6 +19,10 @@ return new class extends Migration
             $table->enum('category', ['math','science','history']);
             $table->enum('language', ['GR', 'EN']);
             $table->timestamps();
+            $table->index(['id'], 'id_index');
+            $table->index(['difficulty'], 'difficulty_index');
+            $table->index(['category'], 'category_index');
+            $table->index(['category', 'difficulty'], 'category_difficulty_index');
         });
     }
 
