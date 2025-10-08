@@ -41,3 +41,22 @@ export interface User {
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
 }
+
+export interface Room {
+    id: number;
+    name: string;
+    settings: {
+        cap: number;
+        password: string;
+        public: boolean;
+    }
+    users: [
+        {
+            id: number;
+            name: string;
+        },
+    ]
+    created_at: string;
+    updated_at: string;
+    [key: string]: unknown;
+}

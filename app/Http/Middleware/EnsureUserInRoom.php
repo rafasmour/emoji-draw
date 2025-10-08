@@ -16,8 +16,9 @@ class EnsureUserInRoom
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, Room $room): Response
+    public function handle(Request $request, Closure $next): Response
     {
+        $room = $request->route('room');
         if(!$this->userInRoom($request->user()->getKey(), $room)) {
             return redirect()->route('room.rooms');
         }

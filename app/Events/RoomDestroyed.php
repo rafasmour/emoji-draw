@@ -11,7 +11,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OwnerLeave
+class RoomDestroyed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,12 +19,10 @@ class OwnerLeave
      * Create a new event instance.
      */
     public function __construct(
-        private User $user,
         private Room $room,
-        public string $message,
     )
     {
-        $this->message = "$user->name (owner) has left the room!";
+        //
     }
 
     /**
@@ -35,12 +33,7 @@ class OwnerLeave
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->id}.chat"),
+            new PrivateChannel("room.{$this->room->getKey()}.destroyed"),
         ];
-    }
-
-    public function getRoom(): Room
-    {
-        return $this->room;
     }
 }

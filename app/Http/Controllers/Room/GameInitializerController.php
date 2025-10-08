@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\User;
+use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schedule;
 
@@ -31,7 +32,21 @@ class GameInitializerController extends Controller
         $room->started = true;
         $room->save();
         broadcast(new StartGame($room));
-        Schedule::job(new RoundHandler($room))->withoutOverlapping()->everyMinute();
+        $schedule = Schedule::job(new RoundHandler($room))->withoutOverlapping();
+        switch ($room->settings['timeLimit']) {
+            case 30:
+                $schedule->everyThirtySeconds();
+                break;
+            case 60:
+                $schedule->everyMinute();
+                break;
+            case 120:
+                $schedule->everyTwoMinutes();
+                break;
+            default:
+                throw new Error('invalid time limit');
+        }
+
         return response()->json(['message' => 'game started']);
     }
 

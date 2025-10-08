@@ -9,13 +9,17 @@ use App\Models\Room;
 use App\UserInRoom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Inertia\Response;
 
 class RoomEntranceController extends Controller
 {
     use UserInRoom;
-    public function join(Request $request, Room $room)
+
+    public function join(Request $request)
     {
+        $validated = $request->validate([
+            'room_id' => ['required', 'exists:rooms,id'],
+        ]);
+        $room = Room::find($validated['room_id']);
         if (count($room->users) === $room->settings['cap']) {
             return \response()->json(['message' => 'Room is full'], 403);
         }
@@ -34,17 +38,17 @@ class RoomEntranceController extends Controller
         ];
         $room->save();
         broadcast(new Join($request->user(), $room))->toOthers();
-        return \response()->json(['message' => 'Joined room']);
+        return response()->redirectToRoute('room.lobby', [$room]);
     }
 
     public function leave(Request $request, Room $room)
     {
         $user = $request->user();
         $newUsers = Collection::make($room->users ?? [])
-        ->filter(fn($roomUser) => $roomUser['id'] !== $user->id)
-        ->values()
-        ->toArray();
-        if(count($newUsers) === count($room->users)) {
+            ->filter(fn($roomUser) => $roomUser['id'] !== $user->id)
+            ->values()
+            ->toArray();
+        if (count($newUsers) === count($room->users)) {
             return \response()->json(['message' => 'user not found'], 404);
         }
         $room->users = $newUsers;

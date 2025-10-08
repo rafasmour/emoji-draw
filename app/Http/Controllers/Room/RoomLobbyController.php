@@ -11,6 +11,6 @@ class RoomLobbyController extends Controller
 {
     public function index(Request $request, Room $room)
     {
-        return Inertia::render("room/{$room->getKey()}/lobby");
+        return Inertia::render("room/lobby");
     }
 }

@@ -20,6 +20,10 @@ return [
 
     'driver' => env('SESSION_DRIVER', 'database'),
 
+    'options' => [
+        'id_field' => '_id'
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Session Lifetime

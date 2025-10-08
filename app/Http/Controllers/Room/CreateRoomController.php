@@ -42,6 +42,6 @@ class CreateRoomController extends Controller
             ]
         ]);
         $room->save();
-        return response()->redirectToRoute('room.join');
+        return redirect()->route('room.lobby', $room);
     }
 }

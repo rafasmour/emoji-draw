@@ -11,6 +11,9 @@ class GameViewController extends Controller
 {
     public function index(Request $request, Room $room)
     {
-        return Inertia::render("room/{$room->getKey()}/game");
+        if(!$room->started) {
+            return redirect()->route('room.lobby', $room);
+        }
+        return Inertia::render("room/game");
     }
 }

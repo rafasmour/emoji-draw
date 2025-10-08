@@ -45,7 +45,8 @@ class RegisteredUserController extends Controller
                 'mute' => false,
             ],
         ]);
-
+        $user->save();
+        dump($user);
         event(new Registered($user));
 
         Auth::login($user);

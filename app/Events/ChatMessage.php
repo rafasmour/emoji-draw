@@ -25,7 +25,6 @@ class ChatMessage
     public function __construct(
         User $user,
         private Room $room,
-        public string $message,
     )
     {
 

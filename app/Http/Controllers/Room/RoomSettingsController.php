@@ -24,7 +24,7 @@ class RoomSettingsController extends Controller
         $validated = $request->validate([
             'cap' => ['integer', 'min:1', 'max:50'],
             'public' => ['boolean'],
-            'timeLimit' => ['integer', 'min:50', 'max:200'],
+            'timeLimit' => ['integer', '30|60|120'],
             'difficulty' => ['array', 'in_array:easy,medium,hard'],
             'categories' => ['array'],
             'rounds' => ['integer', 'min:1', 'max:10'],
