@@ -9,6 +9,7 @@ use App\Models\Room;
 use App\UserInRoom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Inertia\Inertia;
 
 class RoomEntranceController extends Controller
 {
@@ -23,7 +24,8 @@ class RoomEntranceController extends Controller
         if (count($room->users) === $room->settings['cap']) {
             return \response()->json(['message' => 'Room is full'], 403);
         }
-        $room->users[] = [
+        $roomUsers = $room->users;
+        $roomUsers[] = [
             'id' => $request->user()->id,
             'name' => $request->user()->name,
             'score' => 0,
@@ -31,14 +33,17 @@ class RoomEntranceController extends Controller
             'correct_guesses' => 0,
             'artist' => false,
         ];
-        $room->chat[] = [
+        $room->users = $roomUsers;
+        $roomChat = $room->chat ?? [];
+        $roomChat[] = [
             'user_id' => $request->user()->id,
             'user_name' => $request->user()->name,
             'message' => 'joined room',
         ];
+        $room->chat = $roomChat;
         $room->save();
         broadcast(new Join($request->user(), $room))->toOthers();
-        return response()->redirectToRoute('room.lobby', [$room]);
+        return response()->redirectToRoute('room.lobby', $room);
     }
 
     public function leave(Request $request, Room $room)
@@ -51,15 +56,21 @@ class RoomEntranceController extends Controller
         if (count($newUsers) === count($room->users)) {
             return \response()->json(['message' => 'user not found'], 404);
         }
+        if (count($newUsers) === 0) {
+            $room->delete();
+            return response()->redirectToRoute('room.rooms');
+        }
         $room->users = $newUsers;
-        $room->chat[] = [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
+        $roomChat = $room->chat ?? [];
+        $roomChat[] = [
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
             'message' => 'left room',
         ];
+        $room->chat = $roomChat;
         $room->save();
 
         broadcast(new Leave($user, $room))->toOthers();
-        return \response()->json(['message' => 'Left room']);
+        return response()->redirectToRoute('room.lobby', $room);
     }
 }

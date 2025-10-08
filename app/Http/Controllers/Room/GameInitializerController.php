@@ -17,18 +17,21 @@ class GameInitializerController extends Controller
 {
     public function start(Request $request, Room $room)
     {
-        if ($request->user->id !== $room->owner) {
+        $user = $request->user();
+        if ($user->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
         $room->status = [
             'round' => 0,
             'time' => $room->settings['timeLimit'],
         ];
-        $room->chat[] = [
-            'user_id' => $request->user->id,
-            'user_name' => $request->user->name,
+        $roomChat = $room->chat ?? [];
+        $roomChat = [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
             'message' => 'started game',
         ];
+        $room->chat = $roomChat;
         $room->started = true;
         $room->save();
         broadcast(new StartGame($room));
@@ -47,7 +50,7 @@ class GameInitializerController extends Controller
                 throw new Error('invalid time limit');
         }
 
-        return response()->json(['message' => 'game started']);
+        return response()->redirectToRoute('room.game', $room);
     }
 
     public function stop()

@@ -2,7 +2,7 @@ import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { rooms } from '@/routes/room';
 import createRoomController from '@/actions/App/Http/Controllers/Room/CreateRoomController';
 import axios from 'axios';
@@ -24,13 +24,13 @@ function generateRandomString(length: number): string {
 }
 
 export default function Dashboard() {
-
+    const props = usePage().props;
     const createRoom = async () => {
-        const response = await axios.post('/room/create', {name: generateRandomString(10)}, {});
-        const data = response.data;
-        if(data.room_id) {
-            window.location.href = `/room/${data.room_id}`;
-        }
+        const response = await router.post('/room/create', {name: generateRandomString(10)}, {});
+        // const data = response.data;
+        // if(data.room_id) {
+        //     window.location.href = `/room/${data.room_id}`;
+        // }
     }
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -44,7 +44,6 @@ export default function Dashboard() {
                         <Link href={rooms().url}>Browse Rooms</Link>
                         <div
                             onClick={() => createRoom()}
-                            className="absolute inset-0 flex items-center justify-center"
                         >
                             Create Room
                         </div>

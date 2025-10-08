@@ -3,11 +3,9 @@
 namespace App\Events;
 
 use App\Models\Room;
-use Illuminate\Broadcasting\Channel;
+use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -19,6 +17,7 @@ class Leave
      * Create a new event instance.
      */
     public string $message;
+
     public function __construct(
         private User $user,
         private Room $room,

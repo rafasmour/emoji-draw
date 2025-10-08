@@ -11,11 +11,11 @@ class DestroyRoomController extends Controller
 {
     public function destroy(Request $request, Room $room)
     {
-        if (count($room->users) === 0 || $request->user->id === $room->owner)
+        if (count($room->users) === 0 || $request->user()->id === $room->owner)
         {
-            $room->delete();
             broadcast(new RoomDestroyed($room));
-            return response()->json(['message' => 'room deleted']);
+            $room->delete();
+            return response()->redirectToRoute('room.rooms');
         }
         return response()->json(['message' => 'unauthorized'], 403);
     }
