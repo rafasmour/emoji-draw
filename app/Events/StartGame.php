@@ -36,7 +36,7 @@ class StartGame
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.startGame"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

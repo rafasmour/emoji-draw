@@ -42,7 +42,7 @@ class ChangeOwner
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->id}.changeOwner"),
+            new PrivateChannel("room.{$this->room->id}"),
         ];
     }
 }

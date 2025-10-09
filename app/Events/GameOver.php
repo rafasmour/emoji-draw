@@ -2,11 +2,9 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use App\Models\Room;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -17,9 +15,13 @@ class GameOver
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public string $message;
+
+    public function __construct(
+        private Room $room,
+    )
     {
-        //
+
     }
 
     /**
@@ -30,7 +32,7 @@ class GameOver
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

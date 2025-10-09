@@ -34,7 +34,7 @@ class FinishGame
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.finishGame"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

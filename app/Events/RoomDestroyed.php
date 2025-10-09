@@ -33,7 +33,7 @@ class RoomDestroyed
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.destroyed"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

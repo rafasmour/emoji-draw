@@ -33,7 +33,7 @@ class ClearChat
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.clearChat}"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

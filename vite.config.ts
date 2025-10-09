@@ -46,7 +46,7 @@ export default defineConfig({
             host: viteIP,
             protocol: 'wss',
             port: 5173
-        }
+        },
     },
     esbuild: {
         jsx: 'automatic',

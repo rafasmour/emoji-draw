@@ -32,7 +32,7 @@ class StopGame
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.stopGame"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

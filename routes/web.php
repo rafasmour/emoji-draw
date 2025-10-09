@@ -12,6 +12,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 });
+$serverIp = gethostbyname(php_uname('n'));
+Route::redirect('/app/*', "wss://{$serverIp}:8080/app");
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

@@ -33,7 +33,7 @@ class RoomPublicChanged
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.chat"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

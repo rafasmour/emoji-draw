@@ -1,5 +1,6 @@
 import { InertiaLinkProps } from '@inertiajs/react';
 import { LucideIcon } from 'lucide-react';
+import React from 'react';
 
 export interface Auth {
     user: User;
@@ -43,20 +44,28 @@ export interface User {
 }
 
 export interface Room {
-    id: number;
+    id: string;
     name: string;
     settings: {
         cap: number;
         password: string;
         public: boolean;
-    }
-    users: [
+    };
+    users: Array<
         {
             id: number;
             name: string;
-        },
-    ]
+
+        }
+    >;
+    chat: Array<{
+        user_id: string;
+        user: string;
+        message: string;
+    }>;
     created_at: string;
     updated_at: string;
     [key: string]: unknown;
 }
+
+export type setRoomState = React.Dispatch<React.SetStateAction<Room>>;

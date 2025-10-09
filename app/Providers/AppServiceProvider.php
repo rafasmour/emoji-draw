@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Room;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Route;
@@ -24,6 +25,5 @@ class AppServiceProvider extends ServiceProvider
     {
         \URL::forceScheme('https');
         Route::model('room', Room::class);
-
     }
 }

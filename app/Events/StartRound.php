@@ -33,7 +33,7 @@ class StartRound
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel("room.{$this->room->getKey()}.startRound"),
+            new PrivateChannel("room.{$this->room->getKey()}"),
         ];
     }
 }

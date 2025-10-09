@@ -10,9 +10,16 @@ services:
       - 'host.docker.internal:host-gateway'
     labels:
       - traefik.enable=true
-      - traefik.http.routers.emoji-draw.rule=Host(`emoji-draw.${DOMAIN}`)
-      - traefik.http.routers.emoji-draw.entrypoints=websecure
-      - traefik.http.routers.emoji-draw.tls=true
+      - traefik.http.routers.emoji-draw-http.rule=Host(`emoji-draw.${DOMAIN}`)
+      - traefik.http.routers.emoji-draw-http.entrypoints=websecure
+      - traefik.http.routers.emoji-draw-http.service=emoji-draw-http
+      - traefik.http.routers.emoji-draw-http.tls=true
+      - traefik.http.services.emoji-draw-http.loadbalancer.server.port=80
+      - traefik.http.routers.emoji-draw-wss.rule=Host(`emoji-draw.${DOMAIN}`) && PathPrefix(`/app`)
+      - traefik.http.routers.emoji-draw-wss.entrypoints=websecure
+      - traefik.http.routers.emoji-draw-wss.tls=true
+      - traefik.http.routers.emoji-draw-wss.service=emoji-draw-wss
+      - traefik.http.services.emoji-draw-wss.loadbalancer.server.port=8080
       - traefik.docker.network=webgateway
     environment:
       WWWUSER: '${WWWUSER}'
