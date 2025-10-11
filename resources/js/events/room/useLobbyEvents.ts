@@ -74,6 +74,7 @@ export const lobbyEvents: {
                 started: true,
             };
         });
+        window.location.href = `/room/${data.room_id}/game`;
     },
     RoomEvents: () => {},
     RoomPublicChanged: () => {},
@@ -93,6 +94,7 @@ export const lobbyEvents: {
             } as Room;
         });
     },
+    RoomDestroyed: () => window.location.href = '/room',
 };
 
 const lobbyEventNames = Object.keys(lobbyEvents);
