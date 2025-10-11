@@ -17,6 +17,7 @@ class RoomPublicChanged implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $message;
+    public string $event = 'RoomPublicChanged';
     public function __construct(
         public bool  $public,
         private Room $room,

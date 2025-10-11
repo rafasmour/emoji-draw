@@ -21,6 +21,7 @@ class StartGame implements ShouldBroadcastNow
      */
     public string $message;
     public string $room_id;
+    public string $event = 'StartGame';
     public function __construct(
         private Room $room,
     )

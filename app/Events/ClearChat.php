@@ -19,6 +19,7 @@ class ClearChat implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'ClearChat';
     public function __construct(
         private Room $room,
     )

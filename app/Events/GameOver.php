@@ -16,6 +16,7 @@ class GameOver implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'GameOver';
     public string $message;
 
     public function __construct(

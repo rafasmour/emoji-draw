@@ -19,6 +19,7 @@ class StartRound implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'StartRound';
     public function __construct(
         private Room $room,
     )

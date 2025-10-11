@@ -19,12 +19,12 @@ class StopRound implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'StopRound';
     public function __construct(
         private Room $room,
-        public string $message,
+        public array $message,
     )
     {
-        $this->message = "The round has been stopped!";
     }
 
     /**

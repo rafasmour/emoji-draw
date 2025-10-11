@@ -11,13 +11,14 @@ import {
 import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { CircleX, CrownIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 export default function Lobby() {
     const props = usePage().props;
     const defaultRoom: Room = props.room as Room;
     const currentUser = props.auth.user;
     const [room, setRoom] = useState<Room>(defaultRoom);
     const [message, setMessage] = useState('');
+    const chatContainerRef = useRef<HTMLDivElement>(null);
     const users = room.users;
     const { stopListening, listen } = useEchoLobby(room.id, setRoom, currentUser.id);
     useEffect(() => {
@@ -31,11 +32,18 @@ export default function Lobby() {
         const owner = room.users.find((user) => user.id === room.owner);
         console.log(owner?.name);
     }, [room]);
-
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: 'smooth',
+            })
+        }
+    }, [room.chat, chatContainerRef]);
     const isOwner = room.owner === currentUser.id;
     return (
         <div className={'flex flex-col gap-4'}>
-            <div className={'flex flex-col gap-4 border border-accent'}>
+            <div className={'flex flex-col gap-4 border border-accent'} >
                 {users &&
                     users.length > 0 &&
                     users?.map((user, index) => {
@@ -79,11 +87,11 @@ export default function Lobby() {
                 <Button onClick={() => startGame(room.id)}>Start Game</Button>
             </div>
             <div>
-                <div className={'max-h-90 overflow-y-auto'}>
+                <div className={'max-h-90 overflow-y-auto scroll-smooth'} ref={chatContainerRef}>
                     {room.chat.length > 0 &&
                         room.chat.map((chat, index) => (
                             <div key={`user-${chat.user_id}-${index}`}>
-                                <i>{chat.user_id}</i>:{' '}
+                                <i>{chat.user}</i>:{' '}
                                 <span>{chat.message}</span>{' '}
                             </div>
                         ))}

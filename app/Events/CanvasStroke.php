@@ -19,6 +19,7 @@ class CanvasStroke implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'CanvasStroke';
     public array $canvas;
     public function __construct(
         private Room $room,

@@ -19,6 +19,7 @@ class RoomDestroyed implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'RoomDestroyed';
     public function __construct(
         private Room $room,
     )

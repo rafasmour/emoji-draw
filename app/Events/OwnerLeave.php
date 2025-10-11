@@ -18,6 +18,7 @@ class OwnerLeave implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'OwnerLeave';
     public function __construct(
         public User  $user,
         private Room  $room,

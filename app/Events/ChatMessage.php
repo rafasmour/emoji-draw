@@ -20,6 +20,7 @@ class ChatMessage implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
+    public string $event = 'ChatMessage';
     public function __construct(
         private Room $room,
         public array $message,

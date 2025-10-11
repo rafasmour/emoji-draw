@@ -16,13 +16,13 @@ class StopGame implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
-    public string $message;
+    public string $event = 'StopGame';
 
     public function __construct(
         private Room $room,
+        public array $message
     )
     {
-        $this->message = "The game has been stopped!";
     }
 
     /**
