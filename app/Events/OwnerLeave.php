@@ -3,15 +3,15 @@
 namespace App\Events;
 
 use App\Models\Room;
-use Illuminate\Broadcasting\Channel;
+use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OwnerLeave
+class OwnerLeave implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,12 +19,11 @@ class OwnerLeave
      * Create a new event instance.
      */
     public function __construct(
-        private User $user,
-        private Room $room,
-        public string $message,
+        public User  $user,
+        private Room  $room,
+        public array $message,
     )
     {
-        $this->message = "$user->name (owner) has left the room!";
     }
 
     /**

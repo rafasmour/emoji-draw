@@ -53,9 +53,10 @@ export interface Room {
     };
     users: Array<
         {
-            id: number;
+            id: string;
             name: string;
-
+            guesses: number;
+            correct_guesses: number;
         }
     >;
     chat: Array<{

@@ -23,7 +23,8 @@ class OwnerLeft
     public function handle(OwnerLeave $event): void
     {
         $room = $event->getRoom();
-        $changeOwner = new RoomOwnerController();
-        $changeOwner->randomOwner($room);
+        RoomOwnerController::randomOwner($room);
     }
+
+
 }

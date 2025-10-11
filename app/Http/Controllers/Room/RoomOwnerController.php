@@ -14,7 +14,8 @@ class RoomOwnerController extends Controller
     use UserInRoom;
     public function changeOwner(Request $request, Room $room)
     {
-        if ($request->user->id !== $room->owner)
+        $user = $request->user();
+        if ($user->getKey() !== $room->owner)
         {
             return response()->json(['message' => 'unauthorized'], 403);
         }
@@ -27,21 +28,35 @@ class RoomOwnerController extends Controller
             return response()->json(['message' => 'user not in room'], 403);
         }
         $room->owner = $validated['user_id'];
+        $new_owner = User::find($validated['user_id']);
+        $chatMessages = $room->chat ?? [];
+        $message = [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'message' => "Changed Owner to {new_owner->name}",
+        ];
+        $chatMessages[] = $message;
         $room->save();
         $room->refresh();
-        $new_owner = User::find($validated['user_id'])->first();
-        $old_owner = $request->user();
-        broadcast(new ChangeOwner($room, $new_owner, $old_owner));
-        return response()->json(['message' => 'owner changed']);
+        broadcast(new ChangeOwner($room, $new_owner, $message));
     }
-    public function randomOwner(Room $room)
+    static function randomOwner(Room $room)
     {
         $user_ids = array_map(fn($usr) => $usr['id'], $room->users);
         $randomIndex = fake()->numberBetween(0, count($user_ids) - 1);
         $old_owner = User::find($room->owner);
         $room->owner = $user_ids[$randomIndex];
+        $new_owner = User::find($room->owner);
+
+        $chatMessages = $room->chat ?? [];
+        $message = [
+            'user_id' => $new_owner->getKey(),
+            'user_name' => $new_owner->name,
+            'message' => "Owner left the new owner is {$new_owner->name}",
+        ];
+        $chatMessages[] = $message;
         $room->save();
         $room->refresh();
-        broadcast(new ChangeOwner($room, User::find($room->owner), $old_owner));
+        broadcast(new ChangeOwner($room, $new_owner, $message));
     }
 }

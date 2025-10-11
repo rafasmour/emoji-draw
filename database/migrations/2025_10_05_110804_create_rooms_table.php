@@ -20,8 +20,7 @@ return new class extends Migration
             $table->string('owner');
             $table->boolean('started')->default(false);
             $table->json('chat');
-            $table->json('state');
-            $table->string('artist');
+            $table->json('status');
             $table->timestamps();
             $table->index(['id'], 'id_index');
             $table->index(['name'], 'name_index');

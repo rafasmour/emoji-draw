@@ -8,8 +8,8 @@ export default function Room() {
 
     return (
         <div className={"flex flex-wrap gap-4"}>
-            {rooms.length > 0 && rooms?.map((room) => {
-               return (<div key={`room-${room.id}`} className={"p-4 border-accent flex flex-col gap-4"}>
+            {rooms.length > 0 && rooms?.map((room, index) => {
+               return (<div key={`room-${room.id}-${index}`} className={"p-4 border-accent flex flex-col gap-4"}>
                    <h1>{room.name}</h1>
                    <Button onClick={()=> room?.id && joinRoom(room.id)}>
                        Join

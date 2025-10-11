@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Room;
 
 use App\Events\Join;
 use App\Events\Leave;
+use App\Events\OwnerLeave;
+use App\Events\PlayerKicked;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureUserInRoom;
 use App\Models\Room;
+use App\Models\User;
 use App\UserInRoom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,7 +26,7 @@ class RoomEntranceController extends Controller
         ]);
         $room = Room::find($validated['room_id']);
         if (count($room->users) === $room->settings['cap']) {
-            return \response()->json(['message' => 'Room is full'], 403);
+            return Inertia::render('room/full', []);
         }
         $roomUsers = $room->users;
         $roomUsers[] = [
@@ -35,14 +39,16 @@ class RoomEntranceController extends Controller
         ];
         $room->users = $roomUsers;
         $roomChat = $room->chat ?? [];
-        $roomChat[] = [
+        $message = [
             'user_id' => $request->user()->id,
             'user_name' => $request->user()->name,
-            'message' => 'joined room',
+            'message' => 'Joined the Room!',
         ];
+        $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
-        broadcast(new Join($request->user(), $room))->toOthers();
+        $room->refresh();
+        broadcast(new Join($request->user(), $room, $message))->toOthers();
         return response()->redirectToRoute('room.lobby', $room);
     }
 
@@ -62,15 +68,54 @@ class RoomEntranceController extends Controller
         }
         $room->users = $newUsers;
         $roomChat = $room->chat ?? [];
-        $roomChat[] = [
+        $message = [
             'user_id' => $request->user()->id,
             'user_name' => $request->user()->name,
-            'message' => 'left room',
+            'message' => 'Left the Room!',
         ];
+        $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
+        $room->refresh();
+        if ($user->getKey() === $room->owner) {
+            event(new OwnerLeave($user, $room, $message));
+        }
+        broadcast(new Leave($user, $room, $message))->toOthers();
 
-        broadcast(new Leave($user, $room))->toOthers();
-        return response()->redirectToRoute('room.lobby', $room);
+        return response()->redirectToRoute('room.rooms');
+    }
+
+    public function kick(Request $request, Room $room)
+    {
+        $user = $request->user();
+        if($user->getKey() !== $room->owner) {
+            return response()->json(['message' => 'unauthorized'], 403);
+        }
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+        ]);
+        if($user->getKey() === $validated['user_id'] || !$this->userInRoom($validated['user_id'], $room)) {
+            return response()->json(['message' => "can't kick user", 403]);
+        }
+        $newUsers = Collection::make($room->users ?? [])
+            ->filter(fn($roomUser) => $roomUser['id'] === $user->id)
+            ->values()
+            ->toArray();
+        $playerKicked = User::find($validated['user_id']);
+        if (count($newUsers) === count($room->users)) {
+            return \response()->json(['message' => 'user not found'], 404);
+        }
+        $room->users = $newUsers;
+        $roomChat = $room->chat ?? [];
+        $message = [
+            'user_id' => $request->user()->id,
+            'user_name' => $request->user()->name,
+            'message' => "{$user->name} kicked {$playerKicked->name}!",
+        ];
+        $roomChat[] = $message;
+        $room->chat = $roomChat;
+        $room->save();
+        $room->refresh();
+        broadcast(new PlayerKicked($playerKicked, $room, $message));
     }
 }

@@ -12,7 +12,17 @@ export const startGame = async (roomId: string) => {
 };
 
 export const joinRoom =  async (roomId: string) => {
-    const response = await router.post('/room/join', {'room_id': roomId})
-    console.log(await response.data);
+    router.post('/room/join', {'room_id': roomId});
+}
 
+export const changeOwner = async (roomId: string, userId: string) => {
+    router.patch(`/room/${roomId}/change-owner`, {user_id: userId})
+}
+
+export const kickPlayer = async (roomId: string, userId: string) => {
+    router.post(`/room/${roomId}/kick`, {user_id: userId})
+}
+
+export const sendMessage = async (roomId: string, message: string) => {
+    router.post(`/room/${roomId}/messages`, {message: message});
 }

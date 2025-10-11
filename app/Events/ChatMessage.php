@@ -19,18 +19,11 @@ class ChatMessage
     /**
      * Create a new event instance.
      */
-    public string $message;
-    public string $user_id;
-    public string $user_name;
     public function __construct(
-        User $user,
         private Room $room,
+        public array $message,
     )
     {
-
-        $this->message = "$user->name: $message";
-        $this->user_id = $user->getKey();
-        $this->user_name = $user->name;
     }
 
     /**

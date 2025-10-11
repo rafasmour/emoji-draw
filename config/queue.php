@@ -31,12 +31,12 @@ return [
     'connections' => [
 
         'sync' => [
-            'driver' => 'sync',
+            'driver' => 'mongodb',
         ],
 
-        'database' => [
-            'driver' => 'database',
-            'connection' => env('DB_QUEUE_CONNECTION'),
+        'mongodb' => [
+            'driver' => 'mongodb',
+            'connection' => 'mongodb',
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
             'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),

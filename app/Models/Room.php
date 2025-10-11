@@ -17,6 +17,7 @@ class Room extends Model
         'owner',
         'users',
         'settings',
+        'chat',
         'canvasStrokes',
         'started',
         'status',

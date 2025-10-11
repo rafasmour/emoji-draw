@@ -39,7 +39,11 @@ class CreateRoomController extends Controller
                 'difficulty' => 'easy',
                 'language' => 'EN',
                 'timeLimit' => 60,
-            ]
+            ],
+            'chat' => [],
+            'canvasStrokes' => [],
+            'status' => [],
+
         ]);
         $room->save();
         return redirect()->route('room.lobby', $room);

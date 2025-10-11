@@ -30,13 +30,17 @@ class ChatController extends Controller
         $config = HTMLPurifier_Config::createDefault();
         $purifier = new HTMLPurifier($config);
         $message = $purifier->purify($validated['message']);
-        $room->chat[] = [
-            'user_id' => $this->user_id,
-            'user' => $this->user_name,
+        $roomChat = $room->chat ?? [];
+        $user = $request->user();
+        $message = [
+            'user_id' => $user->getKey(),
+            'user' => $user->name,
             'message' => $message,
         ];
+        $roomChat[] = $message;
+        $room->chat = $roomChat;
         $room->save();
-        broadcast(new ChatMessage($request->user(), $room, $message));
-        return response()->json(['message' => 'Message sent']);
+        $room->refresh();
+        broadcast(new ChatMessage($room, $message));
     }
 }

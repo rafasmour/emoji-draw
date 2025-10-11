@@ -35,6 +35,7 @@ Route::prefix('room')->middleware('auth')->group(function () {
         Route::post('guess', [GameActionController::class, 'guess'])->name('room.guess');
         Route::post('start', [GameInitializerController::class, 'start'])->name('room.start');
         Route::post('stop', [GameInitializerController::class, 'stop'])->name('room.stop');
-   });
+        Route::post('kick', [RoomEntranceController::class, 'kick'])->name('room.kick');
+    });
 
 });
