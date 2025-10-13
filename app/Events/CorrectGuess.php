@@ -20,13 +20,12 @@ class CorrectGuess implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $event = 'CorrectGuess';
-    public string $message;
     public function __construct(
         private User $user,
         private Room $room,
+        public array $message,
     )
     {
-        $this->message = "$user->name guessed correctly!";
     }
 
     /**

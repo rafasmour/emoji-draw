@@ -26,7 +26,6 @@ class PlayerKicked implements ShouldBroadcastNow
     public function __construct(
         User $userKicked,
         private Room $room,
-        public array $message,
     )
     {
         $this->user_id = $userKicked->getKey();

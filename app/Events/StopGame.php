@@ -20,7 +20,6 @@ class StopGame implements ShouldBroadcastNow
 
     public function __construct(
         private Room $room,
-        public array $message
     )
     {
     }

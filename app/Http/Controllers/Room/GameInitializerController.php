@@ -32,7 +32,7 @@ class GameInitializerController extends Controller
             'message' => 'started game',
         ];
         $room->chat = $roomChat;
-        $room->started = true;
+        $room->status['started'] = true;
         $room->save();
         broadcast(new StartGame($room));
         $schedule = Schedule::job(new RoundHandler($room))->withoutOverlapping();

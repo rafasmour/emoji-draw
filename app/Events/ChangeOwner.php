@@ -23,7 +23,6 @@ class ChangeOwner implements ShouldBroadcastNow
     public function __construct(
         private Room $room,
         User         $new_owner,
-        public array $message,
     )
     {
         $this->new_owner_id = $new_owner->getKey();

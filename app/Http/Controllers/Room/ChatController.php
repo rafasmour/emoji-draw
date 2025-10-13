@@ -24,7 +24,7 @@ class ChatController extends Controller
             'message' => ['required', 'string', 'min:1', 'max:255'],
         ]);
 
-        if($room->started) {
+        if($room->status['started']) {
             return redirect()->route('room.guess', [$room]);
         }
         $config = HTMLPurifier_Config::createDefault();

@@ -12,7 +12,7 @@ class GameTogglerController extends Controller
 {
     public function getStatus(Request $request, Room $room)
     {
-        return $room->started;
+        return $room->status['started'];
     }
 
     public function start(Request $request, Room $room)
@@ -20,10 +20,10 @@ class GameTogglerController extends Controller
         if ($request->user()->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
-        if ($room->started) {
+        if ($room->status['started']) {
             return response()->json(['message' => 'game already started'], 403);
         }
-        $room->started = true;
+        $room->status['started'] = true;
         $room->chat[] = [
             'user_id' => $request->user()->id,
             'user_name' => $request->user()->name,
@@ -40,10 +40,10 @@ class GameTogglerController extends Controller
         if ($request->user()->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
-        if (!$room->started) {
+        if (!$room->status['started']) {
             return response()->json(['message' => "game hasn't started"], 403);
         }
-        $room->started = true;
+        $room->status['started'] = true;
         $room->chat[] = [
             'user_id' => $request->user()->id,
             'user_name' => $request->user()->name,

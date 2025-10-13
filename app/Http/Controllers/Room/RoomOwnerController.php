@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Room;
 
 use App\Events\ChangeOwner;
+use App\Events\ChatMessage;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Models\User;
@@ -32,13 +33,14 @@ class RoomOwnerController extends Controller
         $chatMessages = $room->chat ?? [];
         $message = [
             'user_id' => $user->id,
-            'user_name' => $user->name,
-            'message' => "Changed Owner to {new_owner->name}",
+            'user' => $user->name,
+            'message' => "Changed Owner to {$new_owner->name}",
         ];
         $chatMessages[] = $message;
         $room->save();
         $room->refresh();
-        broadcast(new ChangeOwner($room, $new_owner, $message));
+        broadcast(new ChangeOwner($room, $new_owner));
+        broadcast(new ChatMessage($room, $message));
     }
     static function randomOwner(Room $room)
     {
@@ -51,12 +53,13 @@ class RoomOwnerController extends Controller
         $chatMessages = $room->chat ?? [];
         $message = [
             'user_id' => $new_owner->getKey(),
-            'user_name' => $new_owner->name,
+            'user' => $new_owner->name,
             'message' => "Owner left the new owner is {$new_owner->name}",
         ];
         $chatMessages[] = $message;
         $room->save();
         $room->refresh();
-        broadcast(new ChangeOwner($room, $new_owner, $message));
+        broadcast(new ChangeOwner($room, $new_owner));
+        broadcast(new ChatMessage($room, $message));
     }
 }

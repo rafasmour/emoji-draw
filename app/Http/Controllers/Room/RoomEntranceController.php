@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\Events\ChatMessage;
 use App\Events\Join;
 use App\Events\Leave;
 use App\Events\OwnerLeave;
@@ -41,14 +42,15 @@ class RoomEntranceController extends Controller
         $roomChat = $room->chat ?? [];
         $message = [
             'user_id' => $request->user()->id,
-            'user_name' => $request->user()->name,
+            'user' => $request->user()->name,
             'message' => 'Joined the Room!',
         ];
         $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
         $room->refresh();
-        broadcast(new Join($request->user(), $room, $message))->toOthers();
+        broadcast(new Join($request->user(), $room))->toOthers();
+        broadcast(new ChatMessage($room, $message));
         return response()->redirectToRoute('room.lobby', $room);
     }
 
@@ -70,7 +72,7 @@ class RoomEntranceController extends Controller
         $roomChat = $room->chat ?? [];
         $message = [
             'user_id' => $request->user()->id,
-            'user_name' => $request->user()->name,
+            'user' => $request->user()->name,
             'message' => 'Left the Room!',
         ];
         $roomChat[] = $message;
@@ -80,7 +82,8 @@ class RoomEntranceController extends Controller
         if ($user->getKey() === $room->owner) {
             event(new OwnerLeave($user, $room, $message));
         }
-        broadcast(new Leave($user, $room, $message))->toOthers();
+        broadcast(new Leave($user, $room))->toOthers();
+        broadcast(new ChatMessage($room, $message));
 
         return response()->redirectToRoute('room.rooms');
     }
@@ -109,13 +112,14 @@ class RoomEntranceController extends Controller
         $roomChat = $room->chat ?? [];
         $message = [
             'user_id' => $request->user()->id,
-            'user_name' => $request->user()->name,
+            'user' => $request->user()->name,
             'message' => "{$user->name} kicked {$playerKicked->name}!",
         ];
         $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
         $room->refresh();
-        broadcast(new PlayerKicked($playerKicked, $room, $message));
+        broadcast(new PlayerKicked($playerKicked, $room));
+        broadcast(new ChatMessage($room, $message));
     }
 }

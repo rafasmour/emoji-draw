@@ -22,7 +22,6 @@ class StopRound implements ShouldBroadcastNow
     public string $event = 'StopRound';
     public function __construct(
         private Room $room,
-        public array $message,
     )
     {
     }

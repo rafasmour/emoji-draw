@@ -23,7 +23,6 @@ class Leave implements ShouldBroadcastNow
     public function __construct(
         private User $user,
         private Room $room,
-        public array $message,
     )
     {
         $this->user_id = $user->getKey();

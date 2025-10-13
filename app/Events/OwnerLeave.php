@@ -22,7 +22,6 @@ class OwnerLeave implements ShouldBroadcastNow
     public function __construct(
         public User  $user,
         private Room  $room,
-        public array $message,
     )
     {
     }

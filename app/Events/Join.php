@@ -24,7 +24,6 @@ class Join implements ShouldBroadcastNow
     public function __construct(
         User $user,
         private Room $room,
-        public array $message,
     )
     {
         $roomUser = array_values(array_filter($this->room->users, fn($u) => $u['id'] === $user->getKey()))[0];

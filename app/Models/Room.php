@@ -25,6 +25,7 @@ class Room extends Model
     protected $casts = [
         'name' => 'string',
         'owner' => 'string',
+        'artist' => 'string',
         /*
          * users: [
          *   [
@@ -54,14 +55,21 @@ class Room extends Model
          * ]
          */
         'settings' => 'array',
-        'canvasStrokes' => 'array',
+        /*
+         * chat: [
+         *   'user_id' => 'string',
+         *   'user_name' => 'string',
+         *   'message' => 'string',
+         * ]
+         */
+        'chat' => 'array',
         'started' => 'boolean',
-        'artist' => 'string',
         /*
          * status: [
          *  'round' => 'int',
          *  'time' => 'int',
          *  'term' => 'string',
+         *  'started' => 'bool',
          * ]
          */
         'status' => 'array',

@@ -11,7 +11,7 @@ class GameViewController extends Controller
 {
     public function index(Request $request, Room $room)
     {
-        if(!$room->started) {
+        if(!$room->status['started']) {
             return redirect()->route('room.lobby', $room);
         }
         return Inertia::render("room/game");

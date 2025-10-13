@@ -29,7 +29,6 @@ class CreateRoomController extends Controller
                     'guesses' => 0,
                     'correct_guesses' => 0,
                     'drawings_guessed' => 0,
-                    'artist' => false,
                 ]
             ],
             'settings' => [
@@ -42,7 +41,12 @@ class CreateRoomController extends Controller
             ],
             'chat' => [],
             'canvasStrokes' => [],
-            'status' => [],
+            'status' => [
+                'round' => 0,
+                'time' => 0,
+                'term' => '',
+                'started' => false,
+            ],
 
         ]);
         $room->save();
