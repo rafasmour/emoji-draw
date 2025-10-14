@@ -18,15 +18,16 @@ class GameActionController extends Controller
 
     public function stroke(Request $request, Room $room)
     {
+        broadcast(new CanvasStroke($room, $request->toArray()))->toOthers();
         $validated = $request->validate([
             'x' => ['required', 'integer', 'min:0', 'max:1000'],
             'y' => ['required', 'integer', 'min:0', 'max:1000'],
-            'emoji' => ['required', new EmojiOnly],
+            'emoji' => ['required', 'max:1',new EmojiOnly],
             'size' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
+        dd($validated);
         $userId = $request->user()->id;
-        $roomUser = array_filter($room->users, fn($usr) => $usr['id'] === $userId)[0];
-        if(!$roomUser['artist']) {
+        if($room->artist !== $userId) {
             return response()->json(['message' => 'not artist'], 403);
         }
         $room->canvas[] = [
@@ -34,7 +35,7 @@ class GameActionController extends Controller
         ];
         $room->save();
         $room->refresh();
-        broadcast(new CanvasStroke($room))->toOthers();
+
         return response()->json(['success' => true], 200);
     }
 

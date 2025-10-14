@@ -25,7 +25,7 @@ class ChatController extends Controller
         ]);
 
         if($room->status['started']) {
-            return redirect()->route('room.guess', [$room]);
+            return redirect()->route('room.guess', $room);
         }
         $config = HTMLPurifier_Config::createDefault();
         $purifier = new HTMLPurifier($config);

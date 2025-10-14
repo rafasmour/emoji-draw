@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\Events\ChatMessage;
 use App\Events\GameOver;
 use App\Events\StartGame;
 use App\Events\StopGame;
@@ -10,14 +11,22 @@ use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\User;
 use Error;
+use http\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schedule;
 
-class GameInitializerController extends Controller
+class GameStateController extends Controller
 {
     public function start(Request $request, Room $room)
     {
         $user = $request->user();
+        if(count($room->users) < 2) {
+            return response()->json(['message' => 'not enough users'], 403);
+        }
+        if($room->status['started'])
+        {
+            return response()->json(['message' => 'game already started'], 403);
+        }
         if ($user->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
@@ -26,13 +35,24 @@ class GameInitializerController extends Controller
             'time' => $room->settings['timeLimit'],
         ];
         $roomChat = $room->chat ?? [];
-        $roomChat = [
+        $message = [
             'user_id' => $user->id,
-            'user_name' => $user->name,
+            'user' => $user->name,
             'message' => 'started game',
         ];
+        $roomChat[] = $message;
         $room->chat = $roomChat;
-        $room->status['started'] = true;
+        $roomStatus = $room->status ?? [];
+        $roomStatus['started'] = true;
+        $room->status = $roomStatus;
+        $roomUsers = $room->users;
+        $roomUsers = array_map(fn($u) => $u['id'], $roomUsers);
+        $roomUsers = array_values(array_unique($roomUsers));
+        $randomIndex = fake()->numberBetween(0, count($roomUsers) - 1);
+        $room->artist = $roomUsers[$randomIndex];
+        $roomStatus = $room->status ?? [];
+        $roomStatus['term'] = 'test';
+        $room->status = $roomStatus;
         $room->save();
         broadcast(new StartGame($room));
         $schedule = Schedule::job(new RoundHandler($room))->withoutOverlapping();
@@ -53,7 +73,7 @@ class GameInitializerController extends Controller
         return response()->redirectToRoute('room.game', $room);
     }
 
-    public function stop()
+    public function stop(Request $request, Room $room)
     {
         if ($request->user->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
@@ -62,20 +82,34 @@ class GameInitializerController extends Controller
             'round' => 0,
             'time' => 0,
         ];
-        $room->chat[] = [
+        $roomChat = $room->chat ?? [];
+        $message = [
             'user_id' => $request->user->id,
-            'user_name' => $request->user->name,
+            'user' => $request->user->name,
             'message' => 'stopped game',
         ];
+        $roomChat[] = $message;
+        $room->chat = $roomChat;
+        $users = $room->users;
+        foreach ($users as $user) {
+            $user = [
+                ...$user,
+                'guesses' => 0,
+                'correct_guesses' => 0,
+                'drawings_guessed' => 0,
+            ];
+        }
+        $room->users = $users;
         $room->save();
         broadcast(new StopGame($room));
+        broadcast(new ChatMessage($room, $message));
         return response()->json(['message' => 'game stopped']);
     }
 
     public function finish(Room $room)
     {
         $roomUserStats = $room->users;
-        foreach($roomUserStats as $userStats) {
+        foreach ($roomUserStats as $userStats) {
             $user = User::find($userStats['id']);
             $user->guesses += $userStats['correct_guesses'];
             $user->guess_count = $userStats['guesses'];

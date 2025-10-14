@@ -65,11 +65,20 @@ export interface Room {
         message: string;
     }>;
     status: {
+        time: number,
+        term: string,
 
     };
+    canvasStrokes: Array<{
+        x: number;
+        y: number;
+        size: number;
+        emoji: string;
+    }>
     owner: string;
     created_at: string;
     updated_at: string;
+    artist: string;
     [key: string]: unknown;
 }
 

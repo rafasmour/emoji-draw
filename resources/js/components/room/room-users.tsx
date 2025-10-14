@@ -10,6 +10,7 @@ export interface RoomUsersProps {
     defaultUsers: Room['users'];
     className?: string;
     owner: string;
+    artist?: string;
     currentUserId: string;
 }
 configureEcho({
@@ -22,6 +23,7 @@ export function RoomUsers({
     owner,
     className,
     currentUserId,
+    artist
 }: RoomUsersProps) {
     const [users, setUsers] = useState<Room['users']>(defaultUsers);
     const isOwner = owner === currentUserId;
@@ -49,7 +51,7 @@ export function RoomUsers({
     }, [listenJoin, listenLeave, listenKick]);
     useEffect(() => {
         setUsers(users);
-    }, [owner]);
+    });
     return (
         <div className={className}>
             {users &&
@@ -63,6 +65,7 @@ export function RoomUsers({
                             <div>
                                 {user.name}{' '}
                                 {owner === user.id && '(Owner) 👑'}
+                                {artist === user.id && '(Artist) 🖌️'}
                             </div>
 
                             {isOwner && user.id !== currentUserId && (

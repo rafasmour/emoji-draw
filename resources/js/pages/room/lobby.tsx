@@ -30,7 +30,7 @@ export default function Lobby() {
     );
     const { listen: listenStart } = useEcho(
         `room.${room.id}`,
-        'GameStarted',
+        'StartGame',
         () => {
             window.location.href = `/room/${room.id}/game`;
         },

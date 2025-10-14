@@ -18,6 +18,7 @@ return new class extends Migration
             $table->json('settings');
             $table->json('canvasStrokes');
             $table->string('owner');
+            $table->string('artist');
             $table->boolean('started')->default(false);
             $table->json('chat');
             $table->json('status');

@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { Room } from '@/types';
 
 export const leaveRoom = async (roomId: string) => {
     router.post(`/room/${roomId}/leave`);
@@ -25,4 +26,12 @@ export const kickPlayer = async (roomId: string, userId: string) => {
 
 export const sendMessage = async (roomId: string, message: string) => {
     router.post(`/room/${roomId}/messages`, {message: message});
+}
+
+export const sendGuess = async (roomId: string, guess: string) => {
+    router.post(`/room/${roomId}/guess`, {guess: guess});
+}
+
+export const sendStroke = async (roomId: string, stroke: Room['canvasStrokes'][number])=> {
+    router.post(`/room/${roomId}/canvas`, {...stroke})
 }

@@ -13,7 +13,7 @@ class RoundChangerController extends Controller
     public function changeRound(Room $room)
     {
         $term = $this->randomTerm();
-        $room->status['term'] = $term;
+        $room->status['term'] = '$term';
         $room->status['round']++;
         $room->status['guesses'] = 0;
         $room->save();

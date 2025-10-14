@@ -1,6 +1,6 @@
-import { sendMessage } from '@/requests/room/room';
+import { sendGuess, sendMessage } from '@/requests/room/room';
 import { Room } from '@/types';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,14 +8,20 @@ import { Button } from '@/components/ui/button';
 interface RoomChatProps {
     roomId: string;
     defaultChat: Room['chat'];
-    className?: string
+    className?: string;
+    guess?: boolean;
 }
 
 configureEcho({
     broadcaster: 'reverb',
     wssPort: 443,
 });
-export function RoomChat({ roomId, defaultChat, className }: RoomChatProps) {
+export function RoomChat({
+    roomId,
+    defaultChat,
+    className,
+    guess = false,
+}: RoomChatProps) {
     const [chat, setChat] = useState<Room['chat']>(defaultChat ?? []);
     const [message, setMessage] = useState<string>('');
     const { listen: listenNewMessage } = useEcho(
@@ -32,17 +38,15 @@ export function RoomChat({ roomId, defaultChat, className }: RoomChatProps) {
         listenNewMessage();
     }, [listenNewMessage, listenClear]);
     return (
-        <div
-            className={className + 'grid grid-cols-10 grid-rows-10'}
-        >
+        <div className={className + 'grid grid-cols-10 grid-rows-10'}>
             <div
                 className={
-                    'col-span-10 row-span-9  overflow-y-auto text-wrap break-words h-90 max-h-90 flex flex-col justify-end'
+                    'col-span-10 row-span-9 flex h-90 max-h-90 flex-col justify-end overflow-y-auto text-wrap break-words'
                 }
             >
                 {chat.length > 0 &&
                     chat.map((chat, index) => (
-                        <div key={`user-${chat.user_id}-${index}`} >
+                        <div key={`user-${chat.user_id}-${index}`}>
                             <i>{chat.user}</i>: <span>{chat.message}</span>{' '}
                         </div>
                     ))}
@@ -56,7 +60,8 @@ export function RoomChat({ roomId, defaultChat, className }: RoomChatProps) {
                 />
                 <Button
                     onClick={() => {
-                        sendMessage(roomId, message);
+                        if(guess) sendGuess(roomId, message);
+                        else sendMessage(roomId, message);
                         setMessage('');
                     }}
                 >
