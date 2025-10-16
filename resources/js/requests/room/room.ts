@@ -32,6 +32,6 @@ export const sendGuess = async (roomId: string, guess: string) => {
     router.post(`/room/${roomId}/guess`, {guess: guess});
 }
 
-export const sendStroke = async (roomId: string, stroke: Room['canvasStrokes'][number])=> {
+export const sendStroke = async (roomId: string, stroke: Room['canvas'][number])=> {
     router.post(`/room/${roomId}/canvas`, {...stroke})
 }

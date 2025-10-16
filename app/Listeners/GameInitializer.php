@@ -20,10 +20,10 @@ class GameInitializer
      */
     public function handle(StartGame|StopGame $event): void
     {
-        if($event instanceof StartGame) {
+        if ($event instanceof StartGame) {
             $this->start($event);
         }
-        if($event instanceof StopGame) {
+        if ($event instanceof StopGame) {
             $this->stop($event);
         }
     }

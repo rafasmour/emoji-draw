@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
+use App\Jobs\RoundHandler;
 use App\Models\Room;
-use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Route;
+use URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,7 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \URL::forceScheme('https');
+        URL::forceScheme('https');
         Route::model('room', Room::class);
+        $this->app->bindMethod([RoundHandler::class, 'handle'], function (RoundHandler $job) {
+            return $job->handle();
+        });
     }
 }

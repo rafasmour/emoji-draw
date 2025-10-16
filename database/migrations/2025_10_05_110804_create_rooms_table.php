@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->json('users');
             $table->json('settings');
-            $table->json('canvasStrokes');
+            $table->json('canvas');
             $table->string('owner');
             $table->string('artist');
             $table->boolean('started')->default(false);

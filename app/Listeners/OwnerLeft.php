@@ -4,8 +4,6 @@ namespace App\Listeners;
 
 use App\Events\OwnerLeave;
 use App\Http\Controllers\Room\RoomOwnerController;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class OwnerLeft
 {

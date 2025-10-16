@@ -17,8 +17,7 @@ class RoomSettingsController extends Controller
 
     public function updateSettings(Request $request, Room $room)
     {
-        if($request->user()->getKey() === $room->owner)
-        {
+        if ($request->user()->getKey() === $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
         $validated = $request->validate([
@@ -42,7 +41,7 @@ class RoomSettingsController extends Controller
         ];
         $room->save();
         $room->refresh();
-        if($roomPublicChanged) {
+        if ($roomPublicChanged) {
             broadcast(new RoomPublicChanged($room->settings['public'], $room));
         }
         return response()->json(['message' => 'settings updated', 'settings' => $room->settings]);

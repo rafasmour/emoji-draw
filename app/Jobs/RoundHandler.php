@@ -2,8 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Events\GameOver;
-use App\Events\StartRound;
 use App\Http\Controllers\Room\GameStateController;
 use App\Http\Controllers\Room\RoundChangerController;
 use App\Models\Room;
@@ -30,17 +28,17 @@ class RoundHandler implements ShouldQueue
     public function handle(): void
     {
         $this->room->refresh();
-        $currentRound = $this->room->status['round'];
-        if($currentRound === $this->room->settings['rounds'])
-        {
+        $roomStatus = $this->room->status;
+        $currentRound = $roomStatus['round'];
+        $roomSettings = $this->room->settings;
+        if ($currentRound === $roomSettings['rounds']) {
             $gameInitializer = new GameStateController();
             $gameInitializer->finish($this->room);
             $this->delete();
-        }
-        else
-        {
+        } else {
             $roundChanger = new RoundChangerController();
             $roundChanger->changeRound($this->room);
+            RoundHandler::dispatch($this->room)->delay(now()->addSeconds($roomSettings['timeLimit']));
         }
     }
 }

@@ -4,8 +4,6 @@ namespace App\Listeners;
 
 use App\Events\StartRound;
 use App\Events\StopRound;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class RoundHandler
 {
@@ -23,10 +21,10 @@ class RoundHandler
      */
     public function handle(StartRound|StopRound $event): void
     {
-        if($event instanceof StartRound) {
+        if ($event instanceof StartRound) {
             $this->start($event);
         }
-        if($event instanceof StopRound) {
+        if ($event instanceof StopRound) {
             $this->stop($event);
         }
     }
@@ -35,6 +33,7 @@ class RoundHandler
     {
 
     }
+
     public function stop(StopRound $event): void
     {
 

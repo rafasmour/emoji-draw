@@ -11,7 +11,9 @@ class CreateRoomController extends Controller
     public function __construct(
         private Room $room,
     )
-    {}
+    {
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -29,6 +31,7 @@ class CreateRoomController extends Controller
                     'guesses' => 0,
                     'correct_guesses' => 0,
                     'drawings_guessed' => 0,
+                    'guessed' => false,
                 ]
             ],
             'settings' => [
@@ -38,9 +41,10 @@ class CreateRoomController extends Controller
                 'difficulty' => 'easy',
                 'language' => 'EN',
                 'timeLimit' => 60,
+                'rounds' => 5,
             ],
             'chat' => [],
-            'canvasStrokes' => [],
+            'canvas' => [],
             'status' => [
                 'round' => 0,
                 'time' => 0,

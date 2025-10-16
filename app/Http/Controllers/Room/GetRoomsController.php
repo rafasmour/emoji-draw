@@ -16,12 +16,12 @@ class GetRoomsController extends Controller
     public function index(Request $request)
     {
         $rooms = $this->room->all()->where('settings.public', true);
-        $rooms = $rooms->map(function(Room $room) {
+        $rooms = $rooms->map(function (Room $room) {
             $userCount = count($room->users);
             $cap = $room->settings['cap'];
             return [
-                ...$room->toArray(),
-                'settings' => [],
+                'id' => $room->getKey(),
+                'name' => $room->name,
                 'users' => "{$userCount}/{$cap}",
             ];
         })->toArray();

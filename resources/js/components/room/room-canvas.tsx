@@ -10,7 +10,7 @@ configureEcho({
     wssPort: 443,
 });
 interface RoomCanvasProps {
-    defaultStrokes: Room['canvasStrokes'];
+    defaultStrokes: Room['canvas'];
     isArtist: boolean;
     className?: string;
     term: string;
@@ -24,7 +24,7 @@ export function RoomCanvas({
     roomId
 }: RoomCanvasProps) {
     const [strokes, setStrokes] =
-        useState<Room['canvasStrokes']>(defaultStrokes);
+        useState<Room['canvas']>(defaultStrokes);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [size, setSize] = useState<number>(100);
     const [emoji, setEmoji] = useState<string>('💩');
@@ -39,24 +39,33 @@ export function RoomCanvas({
             canvasStroke(e.stroke);
         }
     )
+    const {listen: listenClear} = useEcho(`room.${roomId}`, 'ClearCanvas', () => {
+        setStrokes([]);
+        if(canvasRef.current) {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            if(!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    })
     useEffect(() => {
         listenStroke();
+        listenClear();
     });
     useEffect(() => {
         setStrokes(defaultStrokes);
         if (canvasRef.current) {
-            const context = canvasRef.current.getContext('2d');
+            console.log(strokes);
+            const ctx = canvasRef.current.getContext('2d');
+            if(!ctx) return;
             for (const stroke of strokes) {
-                context?.fillText(
-                    stroke.emoji,
-                    stroke.x,
-                    stroke.y,
-                    stroke.size,
-                );
+                ctx.font = `${stroke.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(stroke.emoji, stroke.x, stroke.y);
             }
         }
     }, []);
-    const canvasStroke = (stroke: Room['canvasStrokes'][number]) => {
+    const canvasStroke = (stroke: Room['canvas'][number]) => {
         if(!stroke) return;
         const ctx = canvasRef.current?.getContext('2d');
         if (!ctx) return;
@@ -123,8 +132,8 @@ export function RoomCanvas({
                     const scaleX = canvas.width / rect.width;
                     const scaleY = canvas.height / rect.height;
                     canvasStroke({
-                        x: (e.clientX - rect.left) * scaleX,
-                        y: (e.clientY - rect.top) * scaleY,
+                        x: Math.round((e.clientX - rect.left) * scaleX),
+                        y: Math.round((e.clientY - rect.top) * scaleY),
                         emoji,
                         size,
                     });

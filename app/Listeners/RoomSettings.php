@@ -4,8 +4,6 @@ namespace App\Listeners;
 
 use App\Events\ChangeRoomSettings;
 use App\Models\Room;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class RoomSettings
 {

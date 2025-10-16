@@ -11,7 +11,6 @@ use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\User;
 use Error;
-use http\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schedule;
 
@@ -20,11 +19,10 @@ class GameStateController extends Controller
     public function start(Request $request, Room $room)
     {
         $user = $request->user();
-        if(count($room->users) < 2) {
+        if (count($room->users) < 2) {
             return response()->json(['message' => 'not enough users'], 403);
         }
-        if($room->status['started'])
-        {
+        if ($room->status['started']) {
             return response()->json(['message' => 'game already started'], 403);
         }
         if ($user->id !== $room->owner) {
@@ -53,23 +51,10 @@ class GameStateController extends Controller
         $roomStatus = $room->status ?? [];
         $roomStatus['term'] = 'test';
         $room->status = $roomStatus;
+        $roomSettings = $room->settings ?? [];
         $room->save();
+        RoundHandler::dispatch($room)->delay(now()->addSeconds($roomSettings['timeLimit']));
         broadcast(new StartGame($room));
-        $schedule = Schedule::job(new RoundHandler($room))->withoutOverlapping();
-        switch ($room->settings['timeLimit']) {
-            case 30:
-                $schedule->everyThirtySeconds();
-                break;
-            case 60:
-                $schedule->everyMinute();
-                break;
-            case 120:
-                $schedule->everyTwoMinutes();
-                break;
-            default:
-                throw new Error('invalid time limit');
-        }
-
         return response()->redirectToRoute('room.game', $room);
     }
 

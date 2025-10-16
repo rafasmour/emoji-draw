@@ -62,7 +62,7 @@ export function RoomUsers({
                             key={`user-${user.id}-${index}`}
                             className={'flex w-full flex-row gap-4 p-4'}
                         >
-                            <div>
+                            <div className={`${currentUserId === user.id ? 'text-yellow-500' : ''}`}>
                                 {user.name}{' '}
                                 {owner === user.id && '(Owner) 👑'}
                                 {artist === user.id && '(Artist) 🖌️'}

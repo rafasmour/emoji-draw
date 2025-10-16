@@ -69,7 +69,7 @@ export interface Room {
         term: string,
 
     };
-    canvasStrokes: Array<{
+    canvas: Array<{
         x: number;
         y: number;
         size: number;

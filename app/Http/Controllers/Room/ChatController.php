@@ -8,7 +8,6 @@ use App\Models\Room;
 use HTMLPurifier;
 use HTMLPurifier_Config;
 use Illuminate\Http\Request;
-use Stevebauman\Purify\Purify;
 
 class ChatController extends Controller
 {
@@ -24,7 +23,7 @@ class ChatController extends Controller
             'message' => ['required', 'string', 'min:1', 'max:255'],
         ]);
 
-        if($room->status['started']) {
+        if ($room->status['started']) {
             return redirect()->route('room.guess', $room);
         }
         $config = HTMLPurifier_Config::createDefault();

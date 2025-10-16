@@ -24,7 +24,7 @@ export default function Game() {
         'ChangeOwner',
         (e) => setOwner(e.new_owner_id),
     );
-    console.log(room.canvasStrokes);
+    console.log(room.canvas);
     useEffect(() => {
         listenChangeOwner();
     }, []);
@@ -38,7 +38,7 @@ export default function Game() {
             <RoomCanvas
                 roomId={room.id}
                 term={term}
-                defaultStrokes={room.canvasStrokes}
+                defaultStrokes={room.canvas}
                 isArtist={artist === props.auth.user.id}
                 className={
                     'col-span-7 row-span-5 flex flex-col gap-4 border border-accent'

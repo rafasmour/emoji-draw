@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\RoomFactory;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
@@ -18,7 +19,7 @@ class Room extends Model
         'users',
         'settings',
         'chat',
-        'canvasStrokes',
+        'canvas',
         'started',
         'status',
     ];
@@ -36,6 +37,7 @@ class Room extends Model
          *      'correct_guesses' => 'int',
          *      'drawings_guessed' => 'int',
          *      'room_token' => 'string',
+         *      'guessed' => 'boolean',
          *      ...(more to come)
          *   ]
          * ]
@@ -73,7 +75,8 @@ class Room extends Model
          * ]
          */
         'status' => 'array',
+        'canvas' => 'array',
     ];
-    /** @use HasFactory<\Database\Factories\RoomFactory> */
+    /** @use HasFactory<RoomFactory> */
     use HasFactory;
 }

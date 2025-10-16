@@ -12,7 +12,14 @@ class RoomLobbyController extends Controller
     public function index(Request $request, Room $room)
     {
         return Inertia::render("room/lobby", [
-            'room' => $room,
+            'room' => [
+                'id' => $room->getKey(),
+                'name' => $room->name,
+                'settings' => $room->settings,
+                'users' => $room->users,
+                'chat' => $room->chat,
+                'owner' => $room->owner,
+            ],
         ]);
     }
 }

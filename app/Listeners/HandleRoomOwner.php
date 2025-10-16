@@ -26,7 +26,8 @@ class HandleRoomOwner
     {
     }
 
-    public function changeOwner(ChangeOwner $event) {
+    public function changeOwner(ChangeOwner $event)
+    {
 
     }
 
