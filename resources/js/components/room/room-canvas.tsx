@@ -5,6 +5,9 @@ import data from '@emoji-mart/data';
 import { Button } from '@/components/ui/button';
 import { sendStroke } from '@/requests/room/room';
 import { configureEcho, useEcho } from '@laravel/echo-react';
+import { ReactCountdownClock } from 'react-countdown-clock';
+import { CountdownClock } from '@/components/components/countdown-clock';
+import { useSocket } from '@/connection/echo';
 configureEcho({
     broadcaster: 'reverb',
     wssPort: 443,
@@ -14,6 +17,8 @@ interface RoomCanvasProps {
     isArtist: boolean;
     className?: string;
     term: string;
+    timeLeft: number;
+    roundDuration: number;
     roomId: string;
 }
 export function RoomCanvas({
@@ -21,7 +26,9 @@ export function RoomCanvas({
     isArtist,
     className,
     term,
-    roomId
+    roomId,
+    timeLeft,
+    roundDuration,
 }: RoomCanvasProps) {
     const [strokes, setStrokes] =
         useState<Room['canvas']>(defaultStrokes);
@@ -29,7 +36,7 @@ export function RoomCanvas({
     const [size, setSize] = useState<number>(100);
     const [emoji, setEmoji] = useState<string>('💩');
     const [select, setSelect] = useState<boolean>(false);
-    const {listen: listenStroke} = useEcho(
+    const {listen: listenStroke} = useSocket(
         `room.${roomId}`,
         'CanvasStroke',
         (e) => {
@@ -39,7 +46,7 @@ export function RoomCanvas({
             canvasStroke(e.stroke);
         }
     )
-    const {listen: listenClear} = useEcho(`room.${roomId}`, 'ClearCanvas', () => {
+    const {listen: listenClear} = useSocket(`room.${roomId}`, 'ClearCanvas', () => {
         setStrokes([]);
         if(canvasRef.current) {
             const canvas = canvasRef.current;
@@ -82,7 +89,7 @@ export function RoomCanvas({
                 'flex items-center justify-center gap-5 border border-accent p-10'
             }
         >
-            <div className={'flex flex-row gap-4'}>
+            <div className={'flex flex-row gap-4 w-full items-center justify-center '}>
                 {isArtist ? (
                     <>
                             <div>
@@ -117,7 +124,14 @@ export function RoomCanvas({
                                 className="rounded-md border border-accent p-2"
                             />
                     </>
-                ) : term}
+                ) : (
+                    <>
+                        <span>{term.split('').map(() => <span className={"px-2"}>_</span>)}</span>
+                    </>
+                )}
+                <div className={"flex relative flex-row self-start"}>
+                    <CountdownClock seconds={timeLeft} defaultTime={roundDuration}/>
+                </div>
             </div>
             <canvas
                 width={3000}

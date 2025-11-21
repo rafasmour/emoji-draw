@@ -4,6 +4,7 @@ import { Room } from '@/types';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { CircleX, CrownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useSocket } from '@/connection/echo';
 
 export interface RoomUsersProps {
     roomId: string;
@@ -27,13 +28,13 @@ export function RoomUsers({
 }: RoomUsersProps) {
     const [users, setUsers] = useState<Room['users']>(defaultUsers);
     const isOwner = owner === currentUserId;
-    const { listen: listenJoin } = useEcho(`room.${roomId}`, 'Join', (e) => {
+    const { listen: listenJoin } = useSocket(`room.${roomId}`, 'Join', (e) => {
         setUsers((prev) => [...prev, e.user]);
     });
-    const { listen: listenLeave } = useEcho(`room.${roomId}`, 'Leave', (e) => {
+    const { listen: listenLeave } = useSocket(`room.${roomId}`, 'Leave', (e) => {
         setUsers((prev) => prev.filter((user) => user.id !== e.user_id));
     });
-    const { listen: listenKick } = useEcho(
+    const { listen: listenKick } = useSocket(
         `room.${roomId}`,
         'PlayerKicked',
         (e) => {

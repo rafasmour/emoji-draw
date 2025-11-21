@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Room;
 
 use App\Http\Controllers\Controller;
 use App\Models\Room;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,6 +17,11 @@ class GameViewController extends Controller
         }
 //        dd($room->canvas);
         $roomSettings = $room->settings;
+        $roomStatus = $room->status;
+        $roomStatus = [
+            ...$roomStatus,
+            'time' => Carbon::now()->diffInSeconds($roomStatus['time'])
+        ];
         return Inertia::render("room/game", [
             'room' => [
                 'id' => $room->getKey(),
@@ -25,7 +31,7 @@ class GameViewController extends Controller
                 'chat' => $room->chat,
                 'owner' => $room->owner,
                 'canvas' => $room->canvas,
-                'status' => $room->status,
+                'status' => $roomStatus,
                 'artist' => $room->artist,
             ],
         ]);

@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Models\Term;
 use App\RandomTerm;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class RoundChangerController extends Controller
@@ -17,11 +18,13 @@ class RoundChangerController extends Controller
 
     public function changeRound(Room $room)
     {
+        $roomSettings = $room->settings;
         $term = 'test';
         $roomStatus = $room->status;
         $roomStatus['term'] = $term;
         $roomStatus['round'] += 1;
         $roomStatus['guesses'] = 0;
+        $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings['timeLimit']);
         $room->status = $roomStatus;
         $canvas = $room->canvas ?? [];
         $canvas = [];

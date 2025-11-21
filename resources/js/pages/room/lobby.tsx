@@ -6,6 +6,7 @@ import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
+import { useSocket } from '@/connection/echo';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -17,7 +18,7 @@ export default function Lobby() {
     const currentUser = props.auth.user;
     const [room, setRoom] = useState<Room>(defaultRoom);
     const users = room.users;
-    const { listen: listenChangeOwner } = useEcho(
+    const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
         (e) => {
@@ -28,14 +29,14 @@ export default function Lobby() {
             }));
         },
     );
-    const { listen: listenStart } = useEcho(
+    const { listen: listenStart } = useSocket(
         `room.${room.id}`,
         'StartGame',
         () => {
             window.location.href = `/room/${room.id}/game`;
         },
     );
-    const { listen: listenRoomDestroyed } = useEcho(
+    const { listen: listenRoomDestroyed } = useSocket(
         `room.${room.id}`,
         'RoomDestroyed',
         () => {

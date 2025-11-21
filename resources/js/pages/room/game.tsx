@@ -5,6 +5,7 @@ import { RoomUsers } from '@/components/room/room-users';
 import { RoomChat } from '@/components/room/room-chat';
 import { RoomCanvas } from '@/components/room/room-canvas';
 import { configureEcho, useEcho } from '@laravel/echo-react';
+import { useSocket } from '@/connection/echo';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -19,7 +20,7 @@ export default function Game() {
     const [owner, setOwner] = useState<string>(room.owner);
     const [artist, setArtist] = useState<string>(room.artist);
     const [term, setTerm] = useState<string>(room.status['term']);
-    const { listen: listenChangeOwner } = useEcho(
+    const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
         (e) => setOwner(e.new_owner_id),
@@ -40,6 +41,8 @@ export default function Game() {
                 term={term}
                 defaultStrokes={room.canvas}
                 isArtist={artist === props.auth.user.id}
+                timeLeft={room.status['time']}
+                roundDuration={room.settings['timeLimit']}
                 className={
                     'col-span-7 row-span-5 flex flex-col gap-4 border border-accent'
                 }

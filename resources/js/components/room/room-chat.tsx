@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useSocket } from '@/connection/echo';
 
 interface RoomChatProps {
     roomId: string;
@@ -24,13 +25,13 @@ export function RoomChat({
 }: RoomChatProps) {
     const [chat, setChat] = useState<Room['chat']>(defaultChat ?? []);
     const [message, setMessage] = useState<string>('');
-    const { listen: listenNewMessage } = useEcho(
+    const { listen: listenNewMessage } = useSocket(
         `room.${roomId}`,
         'ChatMessage',
         (e) => setChat((prev) => [...prev, e.message]),
         [defaultChat],
     );
-    const { listen: listenClear } = useEcho(`room.${roomId}`, 'ClearChat', () =>
+    const { listen: listenClear } = useSocket(`room.${roomId}`, 'ClearChat', () =>
         setChat([]),
     );
     useEffect(() => {

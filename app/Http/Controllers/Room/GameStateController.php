@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\User;
+use Carbon\Carbon;
 use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schedule;
@@ -28,9 +29,10 @@ class GameStateController extends Controller
         if ($user->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
+        $roomSettings = $room->settings ?? [];
         $room->status = [
             'round' => 0,
-            'time' => $room->settings['timeLimit'],
+            'time' => Carbon::now()->addSeconds($roomSettings['timeLimit'])->toDateTimeString('second'),
         ];
         $roomChat = $room->chat ?? [];
         $message = [
@@ -98,7 +100,9 @@ class GameStateController extends Controller
             $user = User::find($userStats['id']);
             $user->guesses += $userStats['correct_guesses'];
             $user->guess_count = $userStats['guesses'];
-            $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
+            if($userStats['guesses'] > 0) {
+                $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
+            }
             $user->save();
             $userStats = [
                 ...$userStats,

@@ -46,11 +46,6 @@ export interface User {
 export interface Room {
     id: string;
     name: string;
-    settings: {
-        cap: number;
-        password: string;
-        public: boolean;
-    };
     users: Array<
         {
             id: string;
@@ -67,7 +62,6 @@ export interface Room {
     status: {
         time: number,
         term: string,
-
     };
     canvas: Array<{
         x: number;
@@ -75,10 +69,17 @@ export interface Room {
         size: number;
         emoji: string;
     }>
+    settings: {
+        cap: number;
+        password: string;
+        public: boolean;
+        timeLimit: number;
+        [key: string]: unknown;
+    }
     owner: string;
+    artist: string;
     created_at: string;
     updated_at: string;
-    artist: string;
     [key: string]: unknown;
 }
 
