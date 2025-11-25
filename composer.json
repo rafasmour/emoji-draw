@@ -1,4 +1,4 @@
-il{
+{
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/react-starter-kit",
     "type": "project",
