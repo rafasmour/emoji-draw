@@ -74,6 +74,16 @@ class GameActionController extends Controller
             $roomUsers = array_map(fn($usr) => $usr['id'] === $user->id ? $userStats : $usr, $roomUsers);
             $room->users = $roomUsers;
             broadcast(new ChatMessage($room, $message));
+        } else {
+            $message = [
+                'user_id' => $user->id,
+                'user' => $user->name,
+                'message' => $validated['guess'],
+            ];
+            $chat = $room->chat ?? [];
+            $chat[] = $message;
+            $room->chat = $chat;
+            broadcast(new ChatMessage($room, $message));
         }
         $room->status = $roomStatus;
         $room->save();

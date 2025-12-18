@@ -30,7 +30,9 @@ class GameStateController extends Controller
             return response()->json(['message' => 'unauthorized'], 403);
         }
         $roomSettings = $room->settings ?? [];
+        $roomStatus = $room->status ?? [];
         $room->status = [
+            ...$roomStatus,
             'round' => 0,
             'time' => Carbon::now()->addSeconds($roomSettings['timeLimit'])->toDateTimeString('second'),
         ];
@@ -42,7 +44,7 @@ class GameStateController extends Controller
         ];
         $roomChat[] = $message;
         $room->chat = $roomChat;
-        $roomStatus = $room->status ?? [];
+        $roomStatus = $room->status;
         $roomStatus['started'] = true;
         $room->status = $roomStatus;
         $roomUsers = $room->users;
@@ -86,6 +88,7 @@ class GameStateController extends Controller
                 'drawings_guessed' => 0,
             ];
         }
+        $room->canvas = [];
         $room->users = $users;
         $room->save();
         broadcast(new StopGame($room));
@@ -111,17 +114,23 @@ class GameStateController extends Controller
                 'drawings_guessed' => 0,
             ];
         }
+        $roomStatus = $room->status;
         $room->status = [
+            ...$roomStatus,
             'round' => 0,
             'time' => 0,
         ];
-        $room->chat[] = [
-            'user_id' => $request->user->id,
-            'user_name' => $request->user->name,
-            'message' => 'stopped game',
+        $message = [
+            'user_id' => '1',
+            'user' => 'System',
+            'message' => 'Game Finished!'
         ];
+        $chat = $room->chat ?? [];
+        $chat[] = $message;
+        $room->chat = $chat;
         $room->save();
         broadcast(new GameOver($room));
+        broadcast(new ChatMessage($room, $message));
     }
 
 }

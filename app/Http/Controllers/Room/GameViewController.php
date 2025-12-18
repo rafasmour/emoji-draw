@@ -15,7 +15,6 @@ class GameViewController extends Controller
         if (!$room->status['started']) {
             return redirect()->route('room.lobby', $room);
         }
-//        dd($room->canvas);
         $roomSettings = $room->settings;
         $roomStatus = $room->status;
         $roomStatus = [
