@@ -14,14 +14,15 @@ class EnsureUserInRoom
     /**
      * Handle an incoming request.
      *
-     * @param Closure(Request): (Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $room = $request->route('room');
-        if (!$this->userInRoom($request->user()->getKey(), $room)) {
+        if (! $this->userInRoom($request->user()->getKey(), $room)) {
             return redirect()->route('room.rooms');
         }
+
         return $next($request);
     }
 }

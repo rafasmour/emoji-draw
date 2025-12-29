@@ -11,9 +11,7 @@ use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\User;
 use Carbon\Carbon;
-use Error;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schedule;
 
 class GameStateController extends Controller
 {
@@ -48,7 +46,7 @@ class GameStateController extends Controller
         $roomStatus['started'] = true;
         $room->status = $roomStatus;
         $roomUsers = $room->users;
-        $roomUsers = array_map(fn($u) => $u['id'], $roomUsers);
+        $roomUsers = array_map(fn ($u) => $u['id'], $roomUsers);
         $roomUsers = array_values(array_unique($roomUsers));
         $randomIndex = fake()->numberBetween(0, count($roomUsers) - 1);
         $room->artist = $roomUsers[$randomIndex];
@@ -59,6 +57,7 @@ class GameStateController extends Controller
         $room->save();
         RoundHandler::dispatch($room)->delay(now()->addSeconds($roomSettings['timeLimit']));
         broadcast(new StartGame($room));
+
         return response()->redirectToRoute('room.game', $room);
     }
 
@@ -93,6 +92,7 @@ class GameStateController extends Controller
         $room->save();
         broadcast(new StopGame($room));
         broadcast(new ChatMessage($room, $message));
+
         return response()->json(['message' => 'game stopped']);
     }
 
@@ -103,7 +103,7 @@ class GameStateController extends Controller
             $user = User::find($userStats['id']);
             $user->guesses += $userStats['correct_guesses'];
             $user->guess_count = $userStats['guesses'];
-            if($userStats['guesses'] > 0) {
+            if ($userStats['guesses'] > 0) {
                 $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
             }
             $user->save();
@@ -123,7 +123,7 @@ class GameStateController extends Controller
         $message = [
             'user_id' => '1',
             'user' => 'System',
-            'message' => 'Game Finished!'
+            'message' => 'Game Finished!',
         ];
         $chat = $room->chat ?? [];
         $chat[] = $message;
@@ -132,5 +132,4 @@ class GameStateController extends Controller
         broadcast(new GameOver($room));
         broadcast(new ChatMessage($room, $message));
     }
-
 }

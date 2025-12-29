@@ -1,12 +1,13 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use MongoDB\Laravel\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use MongoDB\Laravel\Schema\Blueprint;
 
 return new class extends Migration
 {
     protected $connection = 'mongodb';
+
     /**
      * Run the migrations.
      */
@@ -15,8 +16,8 @@ return new class extends Migration
         Schema::create('terms', function (Blueprint $table) {
             $table->id();
             $table->string('value');
-            $table->enum('difficulty', ['easy','medium','hard']);
-            $table->enum('category', ['math','science','history']);
+            $table->enum('difficulty', ['easy', 'medium', 'hard']);
+            $table->enum('category', ['math', 'science', 'history']);
             $table->enum('language', ['GR', 'EN']);
             $table->timestamps();
             $table->index(['id'], 'id_index');

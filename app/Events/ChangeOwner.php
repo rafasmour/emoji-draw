@@ -19,13 +19,13 @@ class ChangeOwner implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $event = 'ChangeOwner';
+
     public string $new_owner_id;
 
     public function __construct(
         private Room $room,
-        User         $new_owner,
-    )
-    {
+        User $new_owner,
+    ) {
         $this->new_owner_id = $new_owner->getKey();
 
     }

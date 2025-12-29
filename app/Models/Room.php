@@ -23,6 +23,7 @@ class Room extends Model
         'started',
         'status',
     ];
+
     protected $casts = [
         'name' => 'string',
         'owner' => 'string',
@@ -77,6 +78,7 @@ class Room extends Model
         'status' => 'array',
         'canvas' => 'array',
     ];
+
     /** @use HasFactory<RoomFactory> */
     use HasFactory;
 }

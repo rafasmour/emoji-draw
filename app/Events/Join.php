@@ -19,14 +19,14 @@ class Join implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $event = 'Join';
+
     public array $user;
 
     public function __construct(
-        User         $user,
+        User $user,
         private Room $room,
-    )
-    {
-        $roomUser = array_values(array_filter($this->room->users, fn($u) => $u['id'] === $user->getKey()))[0];
+    ) {
+        $roomUser = array_values(array_filter($this->room->users, fn ($u) => $u['id'] === $user->getKey()))[0];
         $this->user = $roomUser;
     }
 

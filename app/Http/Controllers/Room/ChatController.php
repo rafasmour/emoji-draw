@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
-
     public function getMessages(Request $request, Room $room)
     {
         return $room->chat;

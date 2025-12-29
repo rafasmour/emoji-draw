@@ -7,7 +7,6 @@ use App\Events\ClearCanvas;
 use App\Events\StartRound;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
-use App\Models\Term;
 use App\RandomTerm;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -26,11 +25,15 @@ class RoundChangerController extends Controller
         $roomStatus['guesses'] = 0;
         $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings['timeLimit']);
         $room->status = $roomStatus;
-        $canvas = $room->canvas ?? [];
-        $canvas = [];
-        $room->canvas = $canvas;
+        $room->canvas = [];
+        $previousArtist = $room->artist;
+        $userIds = collect($room->users)
+            ->filter(fn ($u) => $u->id === $previousArtist)
+            ->pluck('id')
+            ->toArray();
+        $room->artist = fake()->randomElement($userIds);
         $roomUsers = new Collection($room->users);
-        $roomUsers = $roomUsers->map(fn($usr) => [
+        $roomUsers = $roomUsers->map(fn ($usr) => [
             ...$usr,
             'guessed' => false,
         ]);
@@ -39,7 +42,7 @@ class RoundChangerController extends Controller
         $message = [
             'user_id' => '1',
             'user' => 'System',
-            'message' => 'Round Changed'
+            'message' => 'Round Changed',
         ];
         $chat[] = $message;
         $room->chat = $chat;

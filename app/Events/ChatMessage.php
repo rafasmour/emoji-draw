@@ -22,9 +22,7 @@ class ChatMessage implements ShouldBroadcastNow
     public function __construct(
         private Room $room,
         public array $message,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.

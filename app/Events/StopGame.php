@@ -21,9 +21,7 @@ class StopGame implements ShouldBroadcastNow
 
     public function __construct(
         private Room $room,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.

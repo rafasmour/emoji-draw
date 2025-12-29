@@ -4,7 +4,5 @@ namespace App\Http\Service;
 
 class TermService
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 }

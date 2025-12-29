@@ -18,14 +18,15 @@ class StartGame implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $message;
+
     public string $room_id;
+
     public string $event = 'StartGame';
 
     public function __construct(
         private Room $room,
-    )
-    {
-        $this->message = "The game has started!";
+    ) {
+        $this->message = 'The game has started!';
         $this->room_id = $this->room->getKey();
     }
 

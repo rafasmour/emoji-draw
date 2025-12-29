@@ -8,12 +8,7 @@ class TermController extends Controller
 {
     public function __construct(
         private Term $term,
-    )
-    {
-    }
+    ) {}
 
-    public function index()
-    {
-
-    }
+    public function index() {}
 }

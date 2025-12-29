@@ -18,15 +18,14 @@ class PlayerKicked implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
-
     public string $event = 'PlayerKicked';
+
     public string $user_id;
 
     public function __construct(
-        User         $userKicked,
+        User $userKicked,
         private Room $room,
-    )
-    {
+    ) {
         $this->user_id = $userKicked->getKey();
     }
 

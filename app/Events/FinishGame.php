@@ -20,11 +20,10 @@ class FinishGame implements ShouldBroadcastNow
     public string $message;
 
     public function __construct(
-        private Room  $room,
+        private Room $room,
         public string $message,
-    )
-    {
-        $this->message = "The game has finished!";
+    ) {
+        $this->message = 'The game has finished!';
     }
 
     /**

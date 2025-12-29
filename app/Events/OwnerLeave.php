@@ -21,11 +21,9 @@ class OwnerLeave implements ShouldBroadcastNow
     public string $event = 'OwnerLeave';
 
     public function __construct(
-        public User  $user,
+        public User $user,
         private Room $room,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.

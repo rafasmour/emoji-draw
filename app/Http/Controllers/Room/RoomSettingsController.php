@@ -44,6 +44,7 @@ class RoomSettingsController extends Controller
         if ($roomPublicChanged) {
             broadcast(new RoomPublicChanged($room->settings['public'], $room));
         }
+
         return response()->json(['message' => 'settings updated', 'settings' => $room->settings]);
     }
 }

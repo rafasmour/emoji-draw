@@ -14,9 +14,9 @@ class RoomOwnerController extends Controller
 {
     use UserInRoom;
 
-    static function randomOwner(Room $room)
+    public static function randomOwner(Room $room)
     {
-        $user_ids = array_map(fn($usr) => $usr['id'], $room->users);
+        $user_ids = array_map(fn ($usr) => $usr['id'], $room->users);
         $randomIndex = fake()->numberBetween(0, count($user_ids) - 1);
         $old_owner = User::find($room->owner);
         $room->owner = $user_ids[$randomIndex];
@@ -45,7 +45,7 @@ class RoomOwnerController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'string', 'exists:users,id'],
         ]);
-        if (!$this->userInRoom($validated['user_id'], $room)) {
+        if (! $this->userInRoom($validated['user_id'], $room)) {
             return response()->json(['message' => 'user not in room'], 403);
         }
         $room->owner = $validated['user_id'];

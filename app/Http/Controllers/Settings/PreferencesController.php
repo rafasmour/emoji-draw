@@ -14,11 +14,12 @@ class PreferencesController extends Controller
     {
         $user = $request->user();
         $preferences = $user->preferences;
+
         return Inertia::render('settings/preferences', [
             'preferences' => [
                 'volume' => $preferences['volume'],
                 'mute' => $preferences['mute'],
-            ]
+            ],
         ]);
     }
 
@@ -33,7 +34,7 @@ class PreferencesController extends Controller
             'preferences' => [
                 'volume' => $validator['volume'],
                 'mute' => $validator['mute'],
-            ]
+            ],
         ]);
 
         return response()->json(['message' => 'Preferences updated successfully']);

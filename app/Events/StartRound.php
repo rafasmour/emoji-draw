@@ -21,8 +21,7 @@ class StartRound implements ShouldBroadcastNow
 
     public function __construct(
         private Room $room,
-    )
-    {
+    ) {
         //
     }
 
