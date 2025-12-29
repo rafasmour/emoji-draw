@@ -19,7 +19,7 @@ class GameViewController extends Controller
         $roomStatus = $room->status;
         $roomStatus = [
             ...$roomStatus,
-            'time' => Carbon::now()->diffInSeconds($roomStatus['time']),
+            'time' => Carbon::now()->diffInSeconds(date: (string) $roomStatus['time']),
         ];
 
         return Inertia::render('room/game', [

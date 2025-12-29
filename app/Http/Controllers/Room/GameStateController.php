@@ -48,8 +48,8 @@ class GameStateController extends Controller
         $roomUsers = $room->users;
         $roomUsers = array_map(fn ($u) => $u['id'], $roomUsers);
         $roomUsers = array_values(array_unique($roomUsers));
-        $randomIndex = fake()->numberBetween(0, count($roomUsers) - 1);
-        $room->artist = $roomUsers[$randomIndex];
+        $randomUser = fake()->randomElement($roomUsers);
+        $room->artist = $randomUser;
         $roomStatus = $room->status ?? [];
         $roomStatus['term'] = 'test';
         $room->status = $roomStatus;
