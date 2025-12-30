@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
+import { useSocket } from '@/connection/echo';
 import { changeOwner, kickPlayer } from '@/requests/room/room';
 import { Room } from '@/types';
-import { configureEcho, useEcho } from '@laravel/echo-react';
+import { configureEcho } from '@laravel/echo-react';
 import { CircleX, CrownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useSocket } from '@/connection/echo';
 
 export interface RoomUsersProps {
     roomId: string;
@@ -24,21 +24,25 @@ export function RoomUsers({
     owner,
     className,
     currentUserId,
-    artist
+    artist,
 }: RoomUsersProps) {
     const [users, setUsers] = useState<Room['users']>(defaultUsers);
     const isOwner = owner === currentUserId;
     const { listen: listenJoin } = useSocket(`room.${roomId}`, 'Join', (e) => {
         setUsers((prev) => [...prev, e.user]);
     });
-    const { listen: listenLeave } = useSocket(`room.${roomId}`, 'Leave', (e) => {
-        setUsers((prev) => prev.filter((user) => user.id !== e.user_id));
-    });
+    const { listen: listenLeave } = useSocket(
+        `room.${roomId}`,
+        'Leave',
+        (e) => {
+            setUsers((prev) => prev.filter((user) => user.id !== e.user_id));
+        },
+    );
     const { listen: listenKick } = useSocket(
         `room.${roomId}`,
         'PlayerKicked',
         (e) => {
-            if(e.user_id === currentUserId){
+            if (e.user_id === currentUserId) {
                 alert('You have been kicked from the room... ');
                 window.location.reload();
             }
@@ -63,10 +67,12 @@ export function RoomUsers({
                             key={`user-${user.id}-${index}`}
                             className={'flex w-full flex-row gap-4 p-4'}
                         >
-                            <div className={`${currentUserId === user.id ? 'text-yellow-500' : ''}`}>
+                            <div
+                                className={`${currentUserId === user.id ? 'text-yellow-500' : ''}`}
+                            >
                                 {user.name}{' '}
-                                {owner === user.id && '(Owner) 👑'}
                                 {artist === user.id && '(Artist) 🖌️'}
+                                {owner === user.id && '(Owner) 👑'}
                             </div>
 
                             {isOwner && user.id !== currentUserId && (

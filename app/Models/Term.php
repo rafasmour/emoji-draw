@@ -8,6 +8,9 @@ use MongoDB\Laravel\Eloquent\Model;
 
 class Term extends Model
 {
+    /** @use HasFactory<TermFactory> */
+    use HasFactory;
+
     protected $connection = 'mongodb';
 
     protected $fillable = [
@@ -22,7 +25,4 @@ class Term extends Model
         'category' => 'string',
         'language' => 'string',
     ];
-
-    /** @use HasFactory<TermFactory> */
-    use HasFactory;
 }

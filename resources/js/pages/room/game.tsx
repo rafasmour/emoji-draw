@@ -1,11 +1,11 @@
-import { usePage } from '@inertiajs/react';
-import { Room } from '@/types';
-import { useEffect, useState } from 'react';
-import { RoomUsers } from '@/components/room/room-users';
-import { RoomChat } from '@/components/room/room-chat';
 import { RoomCanvas } from '@/components/room/room-canvas';
-import { configureEcho, useEcho } from '@laravel/echo-react';
+import { RoomChat } from '@/components/room/room-chat';
+import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
+import { Room } from '@/types';
+import { usePage } from '@inertiajs/react';
+import { configureEcho } from '@laravel/echo-react';
+import { useEffect, useState } from 'react';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -19,15 +19,28 @@ export default function Game() {
     const [room, setRoom] = useState<Room>(defaultRoom);
     const [owner, setOwner] = useState<string>(room.owner);
     const [artist, setArtist] = useState<string>(room.artist);
+    const [isArtist, setIsArtist] = useState();
+    useEffect(() => {
+        setIsArtist(() => artist === props.auth.user.id);
+    }, [artist]);
     const [term, setTerm] = useState<string>(room.status['term']);
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
         (e) => setOwner(e.new_owner_id),
     );
+    const { listen: listenStartRound } = useSocket(
+        `room.${room.id}`,
+        'StartRound',
+        (e) => {
+            setTerm(e.term ?? '');
+            setArtist(e.artist_id);
+        },
+    );
     console.log(room.canvas);
     useEffect(() => {
         listenChangeOwner();
+        listenStartRound();
     }, []);
     const users = room.users;
     return (
@@ -40,7 +53,7 @@ export default function Game() {
                 roomId={room.id}
                 term={term}
                 defaultStrokes={room.canvas}
-                isArtist={artist === props.auth.user.id}
+                isArtist={isArtist}
                 timeLeft={room.status['time']}
                 roundDuration={room.settings['timeLimit']}
                 className={
@@ -51,6 +64,7 @@ export default function Game() {
                 roomId={room.id}
                 defaultUsers={users}
                 owner={owner}
+                artist={artist}
                 currentUserId={currentUser.id}
                 className={
                     'col-span-3 row-span-2 flex flex-col gap-4 border border-accent'
