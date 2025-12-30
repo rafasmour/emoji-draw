@@ -31,6 +31,7 @@ class GameStateController extends Controller
         $roomStatus = $room->status ?? [];
         $room->status = [
             ...$roomStatus,
+            'started' => false,
             'round' => 0,
             'time' => Carbon::now()->addSeconds($roomSettings['timeLimit'])->toDateTimeString('second'),
         ];
