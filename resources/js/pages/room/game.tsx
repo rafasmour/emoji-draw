@@ -19,6 +19,10 @@ export default function Game() {
     const [room, setRoom] = useState<Room>(defaultRoom);
     const [owner, setOwner] = useState<string>(room.owner);
     const [artist, setArtist] = useState<string>(room.artist);
+    const [isArtist, setIsArtist] = useState();
+    useEffect(() => {
+        setIsArtist(() => artist === props.auth.user.id);
+    }, [artist]);
     const [term, setTerm] = useState<string>(room.status['term']);
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
@@ -29,7 +33,6 @@ export default function Game() {
         `room.${room.id}`,
         'StartRound',
         (e) => {
-            console.log('StartRound', e);
             setTerm(e.term ?? '');
             setArtist(e.artist_id);
         },
@@ -50,7 +53,7 @@ export default function Game() {
                 roomId={room.id}
                 term={term}
                 defaultStrokes={room.canvas}
-                isArtist={artist === props.auth.user.id}
+                isArtist={isArtist}
                 timeLeft={room.status['time']}
                 roundDuration={room.settings['timeLimit']}
                 className={

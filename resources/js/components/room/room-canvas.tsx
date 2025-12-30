@@ -40,7 +40,6 @@ export function RoomCanvas({
         'CanvasStroke',
         (e) => {
             if (isArtist) return;
-            console.log(e.stroke);
             setStrokes((prev) => [...prev, e.stroke]);
             canvasStroke(e.stroke);
         },
@@ -49,7 +48,6 @@ export function RoomCanvas({
         `room.${roomId}`,
         'ClearCanvas',
         () => {
-            alert('clera canvas');
             setStrokes([]);
             if (canvasRef.current) {
                 const canvas = canvasRef.current;
@@ -66,7 +64,6 @@ export function RoomCanvas({
     useEffect(() => {
         setStrokes(defaultStrokes);
         if (canvasRef.current) {
-            console.log(strokes);
             const ctx = canvasRef.current.getContext('2d');
             if (!ctx) return;
             for (const stroke of strokes) {
@@ -141,10 +138,15 @@ export function RoomCanvas({
                         </span>
                     </>
                 )}
-                <div className={'relative flex flex-row self-start'}>
+                <div
+                    className={
+                        'relative flex flex-row items-center justify-center'
+                    }
+                >
                     <CountdownClock
                         seconds={timeLeft}
                         defaultTime={roundDuration}
+                        roomId={roomId}
                     />
                 </div>
             </div>

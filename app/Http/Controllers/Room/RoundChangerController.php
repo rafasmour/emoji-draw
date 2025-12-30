@@ -15,7 +15,7 @@ class RoundChangerController extends Controller
 {
     use RandomTerm;
 
-    public function changeRound(Room $room)
+    public function change(Room $room): void
     {
         $roomSettings = $room->settings;
         $term = 'test';
