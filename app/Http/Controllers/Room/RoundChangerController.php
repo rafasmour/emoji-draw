@@ -25,9 +25,7 @@ class RoundChangerController extends Controller
         $roomStatus['guesses'] = 0;
         $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings['timeLimit']);
         $room->status = $roomStatus;
-        $canvas = $room->canvas ?? [];
-        $canvas = [];
-        $room->canvas = $canvas;
+        $room->canvas = [];
         $roomUsers = new Collection($room->users);
         $roomUsers = $roomUsers->map(fn ($usr) => [
             ...$usr,

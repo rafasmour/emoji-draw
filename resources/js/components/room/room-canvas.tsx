@@ -7,6 +7,7 @@ import data from '@emoji-mart/data';
 import EmojiPicker from '@emoji-mart/react';
 import { configureEcho } from '@laravel/echo-react';
 import { useEffect, useRef, useState } from 'react';
+
 configureEcho({
     broadcaster: 'reverb',
     wssPort: 443,
@@ -48,6 +49,7 @@ export function RoomCanvas({
         `room.${roomId}`,
         'ClearCanvas',
         () => {
+            alert('clera canvas');
             setStrokes([]);
             if (canvasRef.current) {
                 const canvas = canvasRef.current;
