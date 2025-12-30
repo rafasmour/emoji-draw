@@ -19,10 +19,15 @@ class StartRound implements ShouldBroadcastNow
      */
     public string $event = 'StartRound';
 
+    public string $term;
+
+    public string $artist_id;
+
     public function __construct(
         private Room $room,
     ) {
-        //
+        $this->term = $room->status['term'];
+        $this->artist_id = $room->artist;
     }
 
     /**

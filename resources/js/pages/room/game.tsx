@@ -25,9 +25,19 @@ export default function Game() {
         'ChangeOwner',
         (e) => setOwner(e.new_owner_id),
     );
+    const { listen: listenStartRound } = useSocket(
+        `room.${room.id}`,
+        'StartRound',
+        (e) => {
+            console.log('StartRound', e);
+            setTerm(e.term ?? '');
+            setArtist(e.artist_id);
+        },
+    );
     console.log(room.canvas);
     useEffect(() => {
         listenChangeOwner();
+        listenStartRound();
     }, []);
     const users = room.users;
     return (

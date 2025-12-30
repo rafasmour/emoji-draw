@@ -36,7 +36,7 @@ class RoundHandler implements ShouldQueue
             $this->delete();
         } else {
             $roundChanger = new RoundChangerController;
-            $roundChanger->changeRound($this->room);
+            $roundChanger->change($this->room);
             RoundHandler::dispatch($this->room)->delay(now()->addSeconds($roomSettings['timeLimit']));
         }
     }
