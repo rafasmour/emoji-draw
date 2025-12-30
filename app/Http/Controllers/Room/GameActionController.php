@@ -48,15 +48,15 @@ class GameActionController extends Controller
         $validated = $request->validate([
             'guess' => ['required', 'string', 'min:1', 'max:255'],
         ]);
-        if($user->getKey() === $room->artist) {
+        if ($user->getKey() === $room->artist) {
             return response()->json(['message' => "Artist Can't guess"], 403);
         }
         $guess = $validated['guess'];
-        $userStats = array_values(array_filter($room->users, fn($usr) => $usr['id'] === $request->user()->id))[0];
-        if($userStats['guessed']) {
+        $userStats = array_values(array_filter($room->users, fn ($usr) => $usr['id'] === $request->user()->id))[0];
+        if ($userStats['guessed']) {
             return response()->json(['message' => 'already guessed'], 403);
-        };
-//        dd($userStats['guessed']);
+        }
+        //        dd($userStats['guessed']);
         $userStats['guesses'] += 1;
         $roomStatus = $room->status;
         if ($guess === $roomStatus['term']) {
@@ -71,7 +71,7 @@ class GameActionController extends Controller
             $chat[] = $message;
             $room->chat = $chat;
             $roomUsers = $room->users;
-            $roomUsers = array_map(fn($usr) => $usr['id'] === $user->id ? $userStats : $usr, $roomUsers);
+            $roomUsers = array_map(fn ($usr) => $usr['id'] === $user->id ? $userStats : $usr, $roomUsers);
             $room->users = $roomUsers;
             broadcast(new ChatMessage($room, $message));
         } else {
@@ -89,5 +89,4 @@ class GameActionController extends Controller
         $room->save();
         new CorrectGuess($request->user(), $room);
     }
-
 }

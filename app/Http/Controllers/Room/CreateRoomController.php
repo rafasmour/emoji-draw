@@ -10,9 +10,7 @@ class CreateRoomController extends Controller
 {
     public function __construct(
         private Room $room,
-    )
-    {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -32,7 +30,7 @@ class CreateRoomController extends Controller
                     'correct_guesses' => 0,
                     'drawings_guessed' => 0,
                     'guessed' => false,
-                ]
+                ],
             ],
             'settings' => [
                 'cap' => 10,
@@ -54,6 +52,7 @@ class CreateRoomController extends Controller
 
         ]);
         $room->save();
+
         return redirect()->route('room.lobby', $room);
     }
 }

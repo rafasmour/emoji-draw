@@ -23,6 +23,4 @@ class OwnerLeft
         $room = $event->getRoom();
         RoomOwnerController::randomOwner($room);
     }
-
-
 }

@@ -28,13 +28,7 @@ class GameInitializer
         }
     }
 
-    private function start(StartGame $event)
-    {
+    private function start(StartGame $event) {}
 
-    }
-
-    private function stop(StopGame $event)
-    {
-
-    }
+    private function stop(StopGame $event) {}
 }

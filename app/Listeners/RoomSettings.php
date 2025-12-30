@@ -13,16 +13,12 @@ class RoomSettings
     public function __construct(
         public User $user,
         public Room $room,
-    )
-    {
+    ) {
         //
     }
 
     /**
      * Handle the event.
      */
-    public function __invoke(ChangeRoomSettings $event): void
-    {
-
-    }
+    public function __invoke(ChangeRoomSettings $event): void {}
 }

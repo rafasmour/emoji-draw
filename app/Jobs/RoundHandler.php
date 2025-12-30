@@ -17,8 +17,7 @@ class RoundHandler implements ShouldQueue
      */
     public function __construct(
         private Room $room,
-    )
-    {
+    ) {
         //
     }
 
@@ -32,11 +31,11 @@ class RoundHandler implements ShouldQueue
         $currentRound = $roomStatus['round'];
         $roomSettings = $this->room->settings;
         if ($currentRound === $roomSettings['rounds']) {
-            $gameInitializer = new GameStateController();
+            $gameInitializer = new GameStateController;
             $gameInitializer->finish($this->room);
             $this->delete();
         } else {
-            $roundChanger = new RoundChangerController();
+            $roundChanger = new RoundChangerController;
             $roundChanger->changeRound($this->room);
             RoundHandler::dispatch($this->room)->delay(now()->addSeconds($roomSettings['timeLimit']));
         }

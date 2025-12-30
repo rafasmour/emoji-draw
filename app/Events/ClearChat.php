@@ -21,8 +21,7 @@ class ClearChat implements ShouldBroadcastNow
 
     public function __construct(
         private Room $room,
-    )
-    {
+    ) {
         //
     }
 

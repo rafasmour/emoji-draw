@@ -11,9 +11,7 @@ class GameAction
     /**
      * Create the event listener.
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Handle the event.
@@ -31,17 +29,9 @@ class GameAction
         }
     }
 
-    public function stroke(CanvasStroke $event)
-    {
-    }
+    public function stroke(CanvasStroke $event) {}
 
-    public function guess(GuessTerm $event)
-    {
+    public function guess(GuessTerm $event) {}
 
-    }
-
-    public function correct(CorrectGuess $event)
-    {
-
-    }
+    public function correct(CorrectGuess $event) {}
 }

@@ -19,13 +19,13 @@ class Leave implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $user_id;
+
     public string $event = 'Leave';
 
     public function __construct(
         private User $user,
         private Room $room,
-    )
-    {
+    ) {
         $this->user_id = $user->getKey();
     }
 

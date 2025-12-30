@@ -9,9 +9,7 @@ use Inertia\Inertia;
 
 class GetRoomsController extends Controller
 {
-    public function __construct(public Room $room)
-    {
-    }
+    public function __construct(public Room $room) {}
 
     public function index(Request $request)
     {
@@ -19,12 +17,14 @@ class GetRoomsController extends Controller
         $rooms = $rooms->map(function (Room $room) {
             $userCount = count($room->users);
             $cap = $room->settings['cap'];
+
             return [
                 'id' => $room->getKey(),
                 'name' => $room->name,
                 'users' => "{$userCount}/{$cap}",
             ];
         })->toArray();
+
         return Inertia::render('room/index', [
             'rooms' => $rooms,
         ]);

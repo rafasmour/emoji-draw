@@ -14,8 +14,10 @@ class DestroyRoomController extends Controller
         if (count($room->users) === 0 || $request->user()->id === $room->owner) {
             broadcast(new RoomDestroyed($room));
             $room->delete();
+
             return response()->redirectToRoute('room.rooms');
         }
+
         return response()->json(['message' => 'unauthorized'], 403);
     }
 }

@@ -14,6 +14,7 @@ use App\UserInRoom;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
+
 use function response;
 
 class RoomEntranceController extends Controller
@@ -51,6 +52,7 @@ class RoomEntranceController extends Controller
         $room->refresh();
         broadcast(new Join($request->user(), $room))->toOthers();
         broadcast(new ChatMessage($room, $message));
+
         return response()->redirectToRoute('room.lobby', $room);
     }
 
@@ -58,7 +60,7 @@ class RoomEntranceController extends Controller
     {
         $user = $request->user();
         $newUsers = Collection::make($room->users ?? [])
-            ->filter(fn($roomUser) => $roomUser['id'] !== $user->id)
+            ->filter(fn ($roomUser) => $roomUser['id'] !== $user->id)
             ->values()
             ->toArray();
         if (count($newUsers) === count($room->users)) {
@@ -66,6 +68,7 @@ class RoomEntranceController extends Controller
         }
         if (count($newUsers) === 0) {
             $room->delete();
+
             return response()->redirectToRoute('room.rooms');
         }
         $room->users = $newUsers;
@@ -97,11 +100,11 @@ class RoomEntranceController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
         ]);
-        if ($user->getKey() === $validated['user_id'] || !$this->userInRoom($validated['user_id'], $room)) {
+        if ($user->getKey() === $validated['user_id'] || ! $this->userInRoom($validated['user_id'], $room)) {
             return response()->json(['message' => "can't kick user", 403]);
         }
         $newUsers = Collection::make($room->users ?? [])
-            ->filter(fn($roomUser) => $roomUser['id'] === $user->id)
+            ->filter(fn ($roomUser) => $roomUser['id'] === $user->id)
             ->values()
             ->toArray();
         $playerKicked = User::find($validated['user_id']);

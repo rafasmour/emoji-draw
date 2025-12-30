@@ -21,7 +21,7 @@ return [
     'driver' => env('SESSION_DRIVER', 'database'),
 
     'options' => [
-        'id_field' => '_id'
+        'id_field' => '_id',
     ],
 
     /*

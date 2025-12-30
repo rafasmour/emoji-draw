@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Http\Controllers\Room\ChatController;
 use App\Http\Controllers\Room\CreateRoomController;
 use App\Http\Controllers\Room\DestroyRoomController;

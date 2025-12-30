@@ -18,14 +18,14 @@ class RoomPublicChanged implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public string $message;
+
     public string $event = 'RoomPublicChanged';
 
     public function __construct(
-        public bool  $public,
+        public bool $public,
         private Room $room,
-    )
-    {
-        $status = $this->public ? "public" : "private";
+    ) {
+        $status = $this->public ? 'public' : 'private';
         $this->message = "The room is now $status!";
     }
 

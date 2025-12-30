@@ -8,7 +8,6 @@ use App\Events\StopRound;
 class RoundHandler
 {
     /**
-     *
      * Create the event listener.
      */
     public function __construct()
@@ -29,13 +28,7 @@ class RoundHandler
         }
     }
 
-    public function start(StartRound $event): void
-    {
+    public function start(StartRound $event): void {}
 
-    }
-
-    public function stop(StopRound $event): void
-    {
-
-    }
+    public function stop(StopRound $event): void {}
 }

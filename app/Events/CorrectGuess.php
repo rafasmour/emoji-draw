@@ -23,9 +23,7 @@ class CorrectGuess implements ShouldBroadcastNow
     public function __construct(
         private User $user,
         private Room $room,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.

@@ -15,20 +15,12 @@ class HandleRoomOwner
     public function __construct(
         public User $user,
         public Room $room,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Handle the event.
      */
-    public function handle(OwnerLeave|ChangeOwner $event): void
-    {
-    }
+    public function handle(OwnerLeave|ChangeOwner $event): void {}
 
-    public function changeOwner(ChangeOwner $event)
-    {
-
-    }
-
+    public function changeOwner(ChangeOwner $event) {}
 }
