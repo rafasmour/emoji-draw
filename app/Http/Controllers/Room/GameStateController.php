@@ -99,10 +99,21 @@ class GameStateController extends Controller
 
     public function finish(Room $room)
     {
-        $roomUserStats = $room->users;
+        $roomUsers = collect($room->users);
+        $roomUsers->each(function ($userStats) {
+           $user = User::all()->find($user['id']);
+           $userScore = [
+               'guesses' => $user->stats['guesses'] + $userStats['guesses'],
+               'correct_guesses' => $user->stats['correct_guesses'] + $userStats['correct_guesses'],
+           ];
+           $user->stats = [
+               ...$userScore,
+
+           ]
+        });
         foreach ($roomUserStats as $userStats) {
             $user = User::find($userStats['id']);
-            $user->guesses += $userStats['correct_guesses'];
+            $user->guesses +=
             $user->guess_count = $userStats['guesses'];
             if ($userStats['guesses'] > 0) {
                 $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
