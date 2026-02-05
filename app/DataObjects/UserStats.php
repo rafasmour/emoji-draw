@@ -7,9 +7,9 @@ class UserStats
     public float $accuracy;
 
     public function __construct(
-        public string $guesses,
-        public string $correct_guesses,
+        public string $guesses = '0',
+        public string $correct_guesses = '1',
     ) {
-        $this->accuracy = ($this->correct_guesses / $this->guesses) * 100;
+        $this->accuracy = ((int) $this->correct_guesses / (int) ($this->guesses ?? 1)) * 100;
     }
 }
