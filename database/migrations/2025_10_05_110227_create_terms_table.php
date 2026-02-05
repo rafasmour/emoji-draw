@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('value');
             $table->enum('difficulty', ['easy', 'medium', 'hard']);
             $table->enum('category', ['math', 'science', 'history']);
-            $table->enum('language', ['GR', 'EN']);
+            $table->enum('language', ['el', 'en']);
             $table->timestamps();
             $table->index(['id'], 'id_index');
             $table->index(['difficulty'], 'difficulty_index');

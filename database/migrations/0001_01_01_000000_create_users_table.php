@@ -17,8 +17,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->json('preferences');
-            $table->json('stats');
+            $table->jsonb('preferences');
+            $table->jsonb('stats');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

@@ -6,6 +6,8 @@ use MongoDB\Laravel\Schema\Blueprint;
 
 return new class extends Migration
 {
+    protected $connection = 'mongodb';
+
     /**
      * Run the migrations.
      */
@@ -14,14 +16,13 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->json('users');
-            $table->json('settings');
-            $table->json('canvas');
+            $table->jsonb('users');
+            $table->jsonb('settings');
+            $table->jsonb('canvas');
             $table->string('owner');
             $table->string('artist');
-            $table->boolean('started')->default(false);
-            $table->json('chat');
-            $table->json('status');
+            $table->jsonb('chat');
+            $table->jsonb('status');
             $table->timestamps();
             $table->index(['id'], 'id_index');
             $table->index(['name'], 'name_index');
