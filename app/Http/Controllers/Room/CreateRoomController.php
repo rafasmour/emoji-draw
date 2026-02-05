@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\RoomSettings;
+use App\DataObjects\RoomStatus;
+use App\DataObjects\RoomUser;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use Illuminate\Http\Request;
@@ -21,34 +24,20 @@ class CreateRoomController extends Controller
         $room = $this->room->create([
             'name' => $validated['name'],
             'owner' => $owner->id,
-            'users' => [
-                [
-                    'id' => $owner->id,
-                    'name' => $owner->name,
-                    'score' => 0,
-                    'guesses' => 0,
-                    'correct_guesses' => 0,
-                    'drawings_guessed' => 0,
-                    'guessed' => false,
-                ],
-            ],
-            'settings' => [
-                'cap' => 10,
-                'public' => true,
-                'categories' => [],
-                'difficulty' => 'easy',
-                'language' => 'EN',
-                'timeLimit' => 60,
-                'rounds' => 5,
-            ],
+            'users' => collect([
+                new RoomUser(
+                    $owner->id,
+                    $owner->name,
+                    0,
+                    0,
+                    false,
+                    0,
+                ),
+            ]),
+            'settings' => new RoomSettings,
             'chat' => [],
             'canvas' => [],
-            'status' => [
-                'round' => 0,
-                'time' => 0,
-                'term' => '',
-                'started' => false,
-            ],
+            'status' => new RoomStatus,
 
         ]);
         $room->save();

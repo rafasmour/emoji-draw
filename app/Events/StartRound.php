@@ -28,9 +28,9 @@ class StartRound implements ShouldBroadcastNow
     public function __construct(
         private Room $room,
     ) {
-        $this->term = $room->status['term'];
+        $this->term = $room->status->term;
         $this->artist_id = $room->artist;
-        $this->time = now()->diffInSeconds((string) $room->status['time']);
+        $this->time = now()->diffInSeconds((string) $room->status->time);
     }
 
     /**

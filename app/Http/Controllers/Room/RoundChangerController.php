@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\ChatMessage as ChatMessageDTO;
+use App\DataObjects\RoomStatus;
+use App\DataObjects\RoomUser;
 use App\Events\ChatMessage;
 use App\Events\ClearCanvas;
 use App\Events\StartRound;
@@ -9,7 +12,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\RandomTerm;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 class RoundChangerController extends Controller
 {
@@ -17,38 +19,46 @@ class RoundChangerController extends Controller
 
     public function change(Room $room): void
     {
-        $roomSettings = $room->settings;
         $term = 'test';
-        $roomStatus = $room->status;
-        $roomStatus['term'] = $term;
-        $roomStatus['round'] += 1;
-        $roomStatus['guesses'] = 0;
-        $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings['timeLimit']);
-        $room->status = $roomStatus;
-        $room->canvas = [];
+
+        $room->status = new RoomStatus(
+            round: $room->status->round + 1,
+            time: Carbon::now()->addSeconds($room->settings->timeLimit)->toDateTimeString('second'),
+            term: $term,
+            started: $room->status->started,
+        );
+
+        $room->canvas = collect([]);
+
         $previousArtist = $room->artist;
-        $userIds = collect($room->users)
-            ->filter(fn ($u) => $u['id'] !== $previousArtist)
-            ->map(fn ($u) => $u['id'] ?? null)
-            ->filter(fn ($u_id) => $u_id !== null)
+        $userIds = $room->users
+            ->filter(fn (RoomUser $u) => $u->id !== $previousArtist)
+            ->pluck('id')
+            ->filter()
             ->toArray();
+
         $room->artist = fake()->randomElement($userIds);
-        $roomUsers = new Collection($room->users);
-        $roomUsers = $roomUsers->map(fn ($usr) => [
-            ...$usr,
-            'guessed' => false,
-        ]);
-        $room->users = $roomUsers->toArray();
-        $chat = $room->chat ?? [];
-        $message = [
-            'user_id' => '1',
-            'user' => 'System',
-            'message' => 'Round Changed',
-        ];
-        $chat[] = $message;
-        $room->chat = $chat;
+
+        $room->users = $room->users->map(fn (RoomUser $usr) => new RoomUser(
+            id: $usr->id,
+            name: $usr->name,
+            score: $usr->score,
+            guesses: $usr->guesses,
+            guessed: false,
+            correct_guesses: $usr->correct_guesses,
+            room_token: $usr->room_token,
+        ));
+
+        $message = new ChatMessageDTO(
+            user_id: '1',
+            user_name: 'System',
+            message: 'Round Changed',
+        );
+
+        $room->chat = $room->chat->push($message);
         $room->save();
         $room->refresh();
+
         broadcast(new StartRound($room));
         broadcast(new ChatMessage($room, $message));
         broadcast(new ClearCanvas($room));

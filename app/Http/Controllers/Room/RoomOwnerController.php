@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\ChatMessage as ChatMessageDTO;
 use App\Events\ChangeOwner;
 use App\Events\ChatMessage;
 use App\Http\Controllers\Controller;
@@ -16,21 +17,22 @@ class RoomOwnerController extends Controller
 
     public static function randomOwner(Room $room)
     {
-        $user_ids = array_map(fn ($usr) => $usr['id'], $room->users);
-        $randomIndex = fake()->numberBetween(0, count($user_ids) - 1);
+        $userIds = $room->users->pluck('id');
+        $randomIndex = fake()->numberBetween(0, $userIds->count() - 1);
         $old_owner = User::find($room->owner);
-        $room->owner = $user_ids[$randomIndex];
+        $room->owner = $userIds[$randomIndex];
         $new_owner = User::find($room->owner);
 
-        $chatMessages = $room->chat ?? [];
-        $message = [
-            'user_id' => $new_owner->getKey(),
-            'user' => $new_owner->name,
-            'message' => "Owner left the new owner is {$new_owner->name}",
-        ];
-        $chatMessages[] = $message;
+        $message = new ChatMessageDTO(
+            user_id: $new_owner->getKey(),
+            user_name: $new_owner->name,
+            message: "Owner left the new owner is {$new_owner->name}",
+        );
+
+        $room->chat = $room->chat->push($message);
         $room->save();
         $room->refresh();
+
         broadcast(new ChangeOwner($room, $new_owner));
         broadcast(new ChatMessage($room, $message));
     }
@@ -45,20 +47,24 @@ class RoomOwnerController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'string', 'exists:users,id'],
         ]);
+
         if (! $this->userInRoom($validated['user_id'], $room)) {
             return response()->json(['message' => 'user not in room'], 403);
         }
+
         $room->owner = $validated['user_id'];
         $new_owner = User::find($validated['user_id']);
-        $chatMessages = $room->chat ?? [];
-        $message = [
-            'user_id' => $user->id,
-            'user' => $user->name,
-            'message' => "Changed Owner to {$new_owner->name}",
-        ];
-        $chatMessages[] = $message;
+
+        $message = new ChatMessageDTO(
+            user_id: $user->id,
+            user_name: $user->name,
+            message: "Changed Owner to {$new_owner->name}",
+        );
+
+        $room->chat = $room->chat->push($message);
         $room->save();
         $room->refresh();
+
         broadcast(new ChangeOwner($room, $new_owner));
         broadcast(new ChatMessage($room, $message));
     }

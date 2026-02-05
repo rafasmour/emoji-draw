@@ -11,7 +11,7 @@ class DestroyRoomController extends Controller
 {
     public function destroy(Request $request, Room $room)
     {
-        if (count($room->users) === 0 || $request->user()->id === $room->owner) {
+        if ($room->users->isEmpty() || $request->user()->id === $room->owner) {
             broadcast(new RoomDestroyed($room));
             $room->delete();
 

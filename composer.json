@@ -18,7 +18,8 @@
         "laravel/wayfinder": "^0.1.9",
         "mongodb/laravel-mongodb": "^5.5",
         "stevebauman/purify": "^6.3",
-        "tightenco/ziggy": "^2.6"
+        "tightenco/ziggy": "^2.6",
+        "ext-mongodb": "*"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",

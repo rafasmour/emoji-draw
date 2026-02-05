@@ -26,8 +26,8 @@ class Join implements ShouldBroadcastNow
         User $user,
         private Room $room,
     ) {
-        $roomUser = array_values(array_filter($this->room->users, fn ($u) => $u['id'] === $user->getKey()))[0];
-        $this->user = $roomUser;
+        $roomUser = $this->room->users->firstWhere('id', $user->getKey());
+        $this->user = $roomUser ? (array) $roomUser : [];
     }
 
     /**

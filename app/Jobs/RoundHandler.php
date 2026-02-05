@@ -27,17 +27,17 @@ class RoundHandler implements ShouldQueue
     public function handle(): void
     {
         $this->room->refresh();
-        $roomStatus = $this->room->status;
-        $currentRound = $roomStatus['round'];
-        $roomSettings = $this->room->settings;
-        if ($currentRound === $roomSettings['rounds']) {
+
+        $currentRound = $this->room->status->round;
+
+        if ($currentRound === $this->room->settings->rounds) {
             $gameInitializer = new GameStateController;
             $gameInitializer->finish($this->room);
             $this->delete();
         } else {
             $roundChanger = new RoundChangerController;
             $roundChanger->change($this->room);
-            RoundHandler::dispatch($this->room)->delay(now()->addSeconds($roomSettings['timeLimit']));
+            RoundHandler::dispatch($this->room)->delay(now()->addSeconds($this->room->settings->timeLimit));
         }
     }
 }

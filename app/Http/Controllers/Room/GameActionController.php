@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\CanvasElement;
+use App\DataObjects\ChatMessage as ChatMessageDTO;
+use App\DataObjects\RoomUser;
 use App\Events\CanvasStroke;
 use App\Events\ChatMessage;
 use App\Events\CorrectGuess;
@@ -26,16 +29,25 @@ class GameActionController extends Controller
             'emoji' => ['required', 'max:5', new EmojiOnly],
             'size' => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
+
         if ($validated->fails()) {
             return response()->json($validated->errors()->toArray(), 400);
         }
+
         $userId = $request->user()->id;
         if ($room->artist !== $userId) {
             return response()->json(['message' => 'not artist'], 403);
         }
-        $canvas = $room->canvas ?? [];
-        $canvas[] = $validated->validated();
-        $room->canvas = $canvas;
+
+        $validatedData = $validated->validated();
+        $canvasElement = new CanvasElement(
+            x: (float) $validatedData['x'],
+            y: (float) $validatedData['y'],
+            emoji: $validatedData['emoji'],
+            size: (int) $validatedData['size'],
+        );
+
+        $room->canvas = $room->canvas->push($canvasElement);
         $room->save();
         $room->refresh();
 
@@ -48,44 +60,55 @@ class GameActionController extends Controller
         $validated = $request->validate([
             'guess' => ['required', 'string', 'min:1', 'max:255'],
         ]);
+
         if ($user->getKey() === $room->artist) {
             return response()->json(['message' => "Artist Can't guess"], 403);
         }
+
         $guess = $validated['guess'];
-        $userStats = array_values(array_filter($room->users, fn ($usr) => $usr['id'] === $request->user()->id))[0];
-        if ($userStats['guessed']) {
+        $userStats = $room->users->firstWhere('id', $user->id);
+
+        if (! $userStats) {
+            return response()->json(['message' => 'user not in room'], 403);
+        }
+
+        if ($userStats->guessed) {
             return response()->json(['message' => 'already guessed'], 403);
         }
-        //        dd($userStats['guessed']);
-        $userStats['guesses'] += 1;
-        $roomStatus = $room->status;
-        if ($guess === $roomStatus['term']) {
-            $userStats['correct_guesses'] = $userStats['correct_guesses'] + 1;
-            $userStats['guessed'] = true;
-            $message = [
-                'user_id' => $user->id,
-                'user' => $user->name,
-                'message' => 'Guessed Correctly!',
-            ];
-            $chat = $room->chat ?? [];
-            $chat[] = $message;
-            $room->chat = $chat;
-            $roomUsers = $room->users;
-            $roomUsers = array_map(fn ($usr) => $usr['id'] === $user->id ? $userStats : $usr, $roomUsers);
-            $room->users = $roomUsers;
+
+        if ($guess === $room->status->term) {
+            $updatedUser = new RoomUser(
+                id: $userStats->id,
+                name: $userStats->name,
+                score: $userStats->score,
+                guesses: $userStats->guesses + 1,
+                guessed: true,
+                correct_guesses: $userStats->correct_guesses + 1,
+                room_token: $userStats->room_token,
+            );
+
+            $message = new ChatMessageDTO(
+                user_id: $user->id,
+                user_name: $user->name,
+                message: 'Guessed Correctly!',
+            );
+
+            $room->chat = $room->chat->push($message);
+            $room->users = $room->users->map(fn (RoomUser $usr) => $usr->id === $user->id ? $updatedUser : $usr
+            );
+
             broadcast(new ChatMessage($room, $message));
         } else {
-            $message = [
-                'user_id' => $user->id,
-                'user' => $user->name,
-                'message' => $validated['guess'],
-            ];
-            $chat = $room->chat ?? [];
-            $chat[] = $message;
-            $room->chat = $chat;
+            $message = new ChatMessageDTO(
+                user_id: $user->id,
+                user_name: $user->name,
+                message: $validated['guess'],
+            );
+
+            $room->chat = $room->chat->push($message);
             broadcast(new ChatMessage($room, $message));
         }
-        $room->status = $roomStatus;
+
         $room->save();
         new CorrectGuess($request->user(), $room);
     }
