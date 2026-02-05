@@ -3,12 +3,18 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Casts\JsonToCollectionCast;
+use App\DataObjects\UserStats;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use MongoDB\Laravel\Auth\User as Authenticatable;
 
+/**
+ * @property Collection<int, UserStats> $stats
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -24,8 +30,11 @@ class User extends Authenticatable
         'email',
         'password',
         'preferences',
-        'guesses',
-        'guess_accuracy',
+        'stats',
+    ];
+
+    protected $casts = [
+        'stats' => JsonToCollectionCast::class.':'.UserStats::class,
     ];
 
     /**

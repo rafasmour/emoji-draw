@@ -18,12 +18,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->json('preferences');
-            $table->json('score');
+            $table->json('stats');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->number('guesses')->default(0);
-            $table->number('guesses_accuracy')->default(0);
-            $table->number('guess_count')->default(0);
             $table->rememberToken();
             $table->timestamps();
             $table->index(['id'], 'id_index');
