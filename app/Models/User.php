@@ -3,7 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Casts\JsonToCollectionCast;
+use App\Casts\BsonToCollectionCast;
 use App\DataObjects\UserStats;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +20,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
+    protected $connection = 'mongodb';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -34,7 +36,7 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'stats' => JsonToCollectionCast::class.':'.UserStats::class,
+        'stats' => BsonToCollectionCast::class.':'.UserStats::class,
     ];
 
     /**
