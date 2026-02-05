@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\JsonToCollectionCast;
 use App\Casts\RoomSettingsCast;
 use App\DataObjects\CanvasElement;
 use App\DataObjects\ChatMessage;
@@ -40,12 +41,12 @@ class Room extends Model
         'name' => 'string',
         'owner' => 'string',
         'artist' => 'string',
-        'users' => RoomCollectionCast::class.':'.RoomUser::class,
+        'users' => JsonToCollectionCast::class.':'.RoomUser::class,
         'settings' => RoomSettingsCast::class,
-        'chat' => RoomCollectionCast::class.':'.ChatMessage::class,
+        'chat' => JsonToCollectionCast::class.':'.ChatMessage::class,
         'started' => 'boolean',
         'status' => 'array',
-        'canvas' => RoomCollectionCast::class.':'.CanvasElement::class,
+        'canvas' => JsonToCollectionCast::class.':'.CanvasElement::class,
     ];
 
     /** @use HasFactory<RoomFactory> */
