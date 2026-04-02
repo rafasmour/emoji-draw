@@ -1,0 +1,5 @@
+.idea
+vendor
+.github
+.git
+node_modules
