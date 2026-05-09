@@ -41,6 +41,18 @@
 
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+        {{
+            \Illuminate\Support\Facades\Vite::createAssetPathsUsing(function ($path, $secure = null) {
+                        if (Vite::isRunningHot()) {
+                            $app_url = config('app.url');
+                            // Force the exact URL you want
+                            return "$app_url/vite/{$path}";
+                        }
+
+                        // Standard behavior for production
+                        return asset("build/{$path}", $secure);
+                    })
+        }}
         @inertiaHead
     </head>
     <body class="font-sans antialiased">

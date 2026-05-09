@@ -2,7 +2,7 @@
 
 namespace App\Casts;
 
-use App\Http\DataObjects\RoomSettings;
+use App\DataObjects\RoomSettings;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 

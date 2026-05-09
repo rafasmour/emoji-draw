@@ -28,3 +28,15 @@ yarn-error.log
 /.zed
 /certs
 TODO.md
+/.cursor
+/.junie
+/.copilot
+/.github/skills
+/.github/copilot-instructions.md
+/.ai
+/.claude
+CLAUDE.md
+boost.json
+.mcp.json
+AGENTS.md
+.gitconfig

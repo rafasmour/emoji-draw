@@ -3,49 +3,45 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
-import viteBasicSslPlugin from '@vitejs/plugin-basic-ssl';
-import * as os from 'node:os';
-function getIPv4(): string | undefined {
-    const ifaces = os.networkInterfaces();
-    for (const entries of Object.values(ifaces)) {
-        for (const i of entries ?? []) {
-            if (i.family === 'IPv4' && !i.internal) {
-                return i.address;
+import * as fs from 'node:fs';
 
-            }
-        }
-    }
-    return undefined;
-}
-
-const viteIP =  getIPv4() || '127.0.0.1';
 export default defineConfig({
     plugins: [
         laravel({
+            hotFile: 'public/hot',
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             ssr: 'resources/js/ssr.tsx',
             refresh: false,
-        }),
-        viteBasicSslPlugin({
-            certDir: "./certs",
-            domains: [process.env.APP_URL ?? "localhost", viteIP],
-            name: "laravel-react-starter-kit",
         }),
         react(),
         tailwindcss(),
         wayfinder({
             formVariants: true,
         }),
+        // this is necessary for the "hot" file which contains the dev server url that laravel uses to attach the frontend to the vite server
+        {
+            name: 'patch-hot-file',
+            enforce: 'post' as const,
+            configureServer(server) {
+                server.httpServer?.once('listening', () => {
+                    const devUrl = process.env.VITE_DEV_URL;
+                    if (devUrl) {
+                        fs.writeFileSync('public/hot', `${devUrl}/vite`);
+                    }
+                });
+            },
+        },
     ],
+    base: '/vite',
     server: {
         cors: true,
-        host: viteIP,
-        port: 5173,
-        strictPort: true,
+        host: '0.0.0.0',
+        port: 80,
+        allowedHosts: true,
         hmr: {
-            host: viteIP,
+            host: process.env.VITE_DEV_URL?.replace(/^https?:\/\//, ''),
             protocol: 'wss',
-            port: 5173
+            clientPort: 443,
         },
     },
     esbuild: {
