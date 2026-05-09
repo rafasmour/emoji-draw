@@ -1,10 +1,25 @@
+x-php-build: &php-build
+  image: emoji-draw-php-fpm:development
+  build:
+    context: .
+    dockerfile: ./docker/common/php-fpm/Dockerfile
+    target: development
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
+      XDEBUG_ENABLED: ${XDEBUG_ENABLED:-true}
+      XDEBUG_MODE: develop,coverage,debug,profile
+      XDEBUG_HOST: ${XDEBUG_HOST:-host.docker.internal}
+      XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
+      XDEBUG_LOG: /dev/stdout
+      XDEBUG_LOG_LEVEL: 0
+
 services:
   web:
-    image: nginx:latest # Using the default Nginx image with custom configuration.
+    image: nginx:latest
+    restart: unless-stopped
     volumes:
-      # Mount the application code for live updates
       - ./:/var/www
-      # Mount the Nginx configuration file
       - ./docker/development/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     environment:
       - NGINX_HOST="emoji-draw.${DOMAIN}"
@@ -18,21 +33,11 @@ services:
       - traefik.http.routers.web.priority=1
     depends_on:
       php-fpm:
-        condition: service_started  # Wait for php-fpm to start
+        condition: service_started
+
   reverb:
-    build:
-      context: .
-      dockerfile: ./docker/common/php-fpm/Dockerfile
-      target: development
-      args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
-        XDEBUG_ENABLED: ${XDEBUG_ENABLED:-true}
-        XDEBUG_MODE: develop,coverage,debug,profile
-        XDEBUG_HOST: ${XDEBUG_HOST:-host.docker.internal}
-        XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
-        XDEBUG_LOG: /dev/stdout
-        XDEBUG_LOG_LEVEL: 0
+    <<: *php-build
+    restart: unless-stopped
     command: php artisan reverb:start --debug
     env_file:
       - .env
@@ -50,22 +55,11 @@ services:
       - traefik.http.services.reverb.loadbalancer.server.port=8080
       - traefik.docker.network=webgateway
     volumes:
-      # Mount the application code for live updates
       - ./:/var/www
+
   queue:
-    build:
-      context: .
-      dockerfile: ./docker/common/php-fpm/Dockerfile
-      target: development
-      args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
-        XDEBUG_ENABLED: ${XDEBUG_ENABLED:-true}
-        XDEBUG_MODE: develop,coverage,debug,profile
-        XDEBUG_HOST: ${XDEBUG_HOST:-host.docker.internal}
-        XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
-        XDEBUG_LOG: /dev/stdout
-        XDEBUG_LOG_LEVEL: 0
+    <<: *php-build
+    restart: unless-stopped
     command: php artisan queue:listen --tries=3
     env_file:
       - .env
@@ -73,22 +67,11 @@ services:
     networks:
       - webgateway
     volumes:
-      # Mount the application code for live updates
       - ./:/var/www
+
   vite:
-    build:
-      context: .
-      dockerfile: ./docker/common/php-fpm/Dockerfile
-      target: development
-      args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
-        XDEBUG_ENABLED: ${XDEBUG_ENABLED:-true}
-        XDEBUG_MODE: develop,coverage,debug,profile
-        XDEBUG_HOST: ${XDEBUG_HOST:-host.docker.internal}
-        XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
-        XDEBUG_LOG: /dev/stdout
-        XDEBUG_LOG_LEVEL: 0
+    <<: *php-build
+    restart: unless-stopped
     command: npm run dev
     env_file:
       - .env
@@ -105,41 +88,25 @@ services:
     networks:
       - webgateway
     volumes:
-      # Mount the application code for live updates
       - ./:/var/www
 
   php-fpm:
-    # For the php-fpm service, we will create a custom image to install the necessary PHP extensions and setup proper permissions.
-    build:
-      context: .
-      dockerfile: ./docker/common/php-fpm/Dockerfile
-      target: development
-      args:
-        UID: ${UID:-1000}
-        GID: ${GID:-1000}
-        XDEBUG_ENABLED: ${XDEBUG_ENABLED:-true}
-        XDEBUG_MODE: develop,coverage,debug,profile
-        XDEBUG_HOST: ${XDEBUG_HOST:-host.docker.internal}
-        XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
-        XDEBUG_LOG: /dev/stdout
-        XDEBUG_LOG_LEVEL: 0
+    <<: *php-build
+    restart: unless-stopped
     env_file:
-      # Load the environment variables from the Laravel application
       - .env
     ports:
       - "9000"
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
-      # Mount the application code for live updates
       - ./:/var/www
     networks:
       - webgateway
     depends_on:
       mongodb:
-        condition: service_started  # Wait for postgres to start
+        condition: service_healthy
 
   workspace:
-    # For the workspace service, we will also create a custom image to install and setup all the necessary stuff.
     build:
       context: .
       dockerfile: ./docker/development/workspace/Dockerfile
@@ -152,16 +119,19 @@ services:
         XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
         XDEBUG_LOG: /dev/stdout
         XDEBUG_LOG_LEVEL: 0
-    tty: true  # Enables an interactive terminal
-    stdin_open: true  # Keeps standard input open for 'docker exec'
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
     env_file:
       - .env
     volumes:
       - ./:/var/www
     networks:
       - webgateway
+
   mongodb:
     image: mongo:8.0
+    restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -183,8 +153,10 @@ services:
     volumes:
       - mongodb:/data/db
       - ./database/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+
   mongo-express:
     image: mongo-express
+    restart: unless-stopped
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_ROOT_USERNAME}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_ROOT_PASSWORD}
@@ -195,15 +167,17 @@ services:
       - traefik.http.routers.emoji-db.entrypoints=websecure
       - traefik.http.routers.emoji-db.tls=true
       - traefik.docker.network=webgateway
-
     networks:
       - webgateway
       - default
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+
 networks:
   webgateway:
     external: true
+
 volumes:
   mongodb:
     driver: local
