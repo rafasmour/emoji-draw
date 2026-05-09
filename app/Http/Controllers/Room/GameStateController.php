@@ -99,26 +99,16 @@ class GameStateController extends Controller
 
     public function finish(Room $room)
     {
-        $roomUsers = collect($room->users);
-        $roomUsers->each(function ($userStats) {
-           $user = User::all()->find($user['id']);
-           $userScore = [
-               'guesses' => $user->stats['guesses'] + $userStats['guesses'],
-               'correct_guesses' => $user->stats['correct_guesses'] + $userStats['correct_guesses'],
-           ];
-           $user->stats = [
-               ...$userScore,
-
-           ]
-        });
-        foreach ($roomUserStats as $userStats) {
+        $roomUsers = $room->users;
+        foreach ($roomUsers as &$userStats) {
             $user = User::find($userStats['id']);
-            $user->guesses +=
-            $user->guess_count = $userStats['guesses'];
-            if ($userStats['guesses'] > 0) {
-                $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
+            if ($user) {
+                $user->guess_count = $userStats['guesses'];
+                if ($userStats['guesses'] > 0) {
+                    $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
+                }
+                $user->save();
             }
-            $user->save();
             $userStats = [
                 ...$userStats,
                 'guesses' => 0,
@@ -126,12 +116,14 @@ class GameStateController extends Controller
                 'drawings_guessed' => 0,
             ];
         }
+        unset($userStats);
         $roomStatus = $room->status;
         $room->status = [
             ...$roomStatus,
             'round' => 0,
             'time' => 0,
         ];
+        $room->users = $roomUsers;
         $message = [
             'user_id' => '1',
             'user' => 'System',

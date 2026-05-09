@@ -142,6 +142,11 @@ RUN if [ "${XDEBUG_ENABLED}" = "true" ]; then \
     echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini ; \
 fi
 
+# Install Node.js for Vite/Wayfinder
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Add ARGs for syncing permissions
 ARG UID=1000
 ARG GID=1000
@@ -163,6 +168,9 @@ RUN sed -i "s/user = www-data/user = www/g" /usr/local/etc/php-fpm.d/www.conf &&
 
 # Set the working directory
 WORKDIR /var/www
+
+# Fix ownership excluding node_modules (root context, so no permission issues)
+RUN find /var/www -maxdepth 1 ! -name 'node_modules' -exec chown -R ${UID}:${GID} {} +
 
 # Copy the entrypoint script
 COPY ./docker/development/php-fpm/entrypoint.sh /usr/local/bin/entrypoint.sh

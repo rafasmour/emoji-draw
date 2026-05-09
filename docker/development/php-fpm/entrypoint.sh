@@ -7,7 +7,9 @@ GROUP_ID=${GID:-1000}
 
 # Fix file ownership and permissions using the passed UID and GID
 echo "Fixing file permissions with UID=${USER_ID} and GID=${GROUP_ID}..."
-chown -R ${USER_ID}:${GROUP_ID} /var/www || echo "Some files could not be changed"
+
+# Remove stale Vite hot file so Laravel doesn't generate asset URLs before Vite starts
+rm -f /var/www/public/hot
 
 # Clear configurations to avoid caching issues in development
 echo "Clearing configurations..."
