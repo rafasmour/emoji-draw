@@ -4,6 +4,7 @@ namespace App\Casts;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class JsonToCollectionCast implements CastsAttributes
 {
@@ -13,7 +14,7 @@ class JsonToCollectionCast implements CastsAttributes
     {
         $data = is_string($value) ? json_decode($value, true) : $value;
 
-        return collect($data ?? [])->map(fn ($item) => new $this->dtoClass(...$item));
+        return Collection::make($data ?? [])->map(fn ($item) => new $this->dtoClass(...$item));
     }
 
     public function set(Model $model, string $key, mixed $value, array $attributes)
