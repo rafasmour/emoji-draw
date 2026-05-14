@@ -16,7 +16,7 @@ class GetRoomsController extends Controller
         $rooms = $this->room->all()->where('settings.public', true);
         $rooms = $rooms->map(function (Room $room) {
             $userCount = count($room->users);
-            $cap = $room->settings['cap'];
+            $cap = $room->settings->cap;
 
             return [
                 'id' => $room->getKey(),

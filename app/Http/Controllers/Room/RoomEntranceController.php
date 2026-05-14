@@ -27,7 +27,7 @@ class RoomEntranceController extends Controller
             'room_id' => ['required', 'exists:rooms,id'],
         ]);
         $room = Room::find($validated['room_id']);
-        if (count($room->users) === $room->settings['cap']) {
+        if (count($room->users) === $room->settings->cap) {
             return Inertia::render('room/full', []);
         }
         $roomUsers = $room->users;
