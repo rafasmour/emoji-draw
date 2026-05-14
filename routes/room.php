@@ -14,7 +14,7 @@ use App\Http\Controllers\Room\RoomSettingsController;
 use App\Http\Middleware\EnsureUserInRoom;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('room')->middleware('auth')->group(function () {
+Route::prefix('room')->middleware('ensure.authenticated')->group(function () {
     Route::get('/', [GetRoomsController::class, 'index'])->name('room.rooms');
     Route::post('create', [CreateRoomController::class, 'index'])->name('room.create');
     Route::post('join', [RoomEntranceController::class, 'join'])->name('room.join');
