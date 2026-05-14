@@ -9,6 +9,7 @@ readonly class RoomUser
         public string $name,
         public int $score,
         public int $guesses,
+        public int $correct_guesses,
         public bool $guessed,
         public ?string $room_token = null,
     ) {}
