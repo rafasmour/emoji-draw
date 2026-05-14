@@ -29,20 +29,20 @@ class RoomSettingsController extends Controller
             'rounds' => ['integer', 'min:1', 'max:10'],
         ]);
         $currentSettings = $room->settings;
-        $roomPublicChanged = $validated['public'] !== $currentSettings['public'];
+        $roomPublicChanged = $validated['public'] !== $currentSettings->public;
         $room->settings = [
-            ...$currentSettings,
+            ...(array) $currentSettings,
             ...$validated,
         ];
         $room->chat[] = [
             'user_id' => $request->user()->id,
-            'user_name' => $request->user()->name,
+            'user' => $request->user()->name,
             'message' => 'updated settings',
         ];
         $room->save();
         $room->refresh();
         if ($roomPublicChanged) {
-            broadcast(new RoomPublicChanged($room->settings['public'], $room));
+            broadcast(new RoomPublicChanged($room->settings->public, $room));
         }
 
         return response()->json(['message' => 'settings updated', 'settings' => $room->settings]);
