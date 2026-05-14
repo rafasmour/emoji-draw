@@ -48,5 +48,6 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+        ->middleware('ensure.not.guest')
         ->name('logout');
 });
