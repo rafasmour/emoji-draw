@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\DataObjects\RoomUser;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Broadcasting\Channel;
@@ -20,14 +21,13 @@ class Join implements ShouldBroadcastNow
      */
     public string $event = 'Join';
 
-    public array $user;
+    public RoomUser $user;
 
     public function __construct(
         User $user,
         private Room $room,
     ) {
-        $roomUser = array_values(array_filter($this->room->users, fn ($u) => $u['id'] === $user->getKey()))[0];
-        $this->user = $roomUser;
+        $this->user = $this->room->users->firstWhere('id', $user->getKey());
     }
 
     /**
