@@ -6,11 +6,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { logout } from '@/routes';
+import { login, logout, register } from '@/routes';
 import { edit } from '@/routes/profile';
 import { type User } from '@/types';
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { LogIn, LogOut, Settings, UserPlus } from 'lucide-react';
 
 interface UserMenuContentProps {
     user: User;
@@ -23,6 +23,33 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
         cleanup();
         router.flushAll();
     };
+
+    if (user.is_guest) {
+        return (
+            <>
+                <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                        <UserInfo user={user} showEmail={false} />
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                        <Link className="block w-full" href={login()} as="button" onClick={cleanup}>
+                            <LogIn className="mr-2" />
+                            Log in
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link className="block w-full" href={register()} as="button" onClick={cleanup}>
+                            <UserPlus className="mr-2" />
+                            Create account
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+            </>
+        );
+    }
 
     return (
         <>
