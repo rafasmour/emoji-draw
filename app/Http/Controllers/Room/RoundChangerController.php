@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\RoomUser;
 use App\Events\ChatMessage;
 use App\Events\ClearCanvas;
 use App\Events\StartRound;
@@ -9,7 +10,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\RandomTerm;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 class RoundChangerController extends Controller
 {
@@ -18,27 +18,30 @@ class RoundChangerController extends Controller
     public function change(Room $room): void
     {
         $roomSettings = $room->settings;
-        $term = 'test';
+        $term = $this->randomTerm();
         $roomStatus = $room->status;
         $roomStatus['term'] = $term;
         $roomStatus['round'] += 1;
         $roomStatus['guesses'] = 0;
-        $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings['timeLimit']);
+        $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings->timeLimit)->toDateTimeString('second');
         $room->status = $roomStatus;
         $room->canvas = [];
         $previousArtist = $room->artist;
-        $userIds = collect($room->users)
-            ->filter(fn ($u) => $u['id'] !== $previousArtist)
-            ->map(fn ($u) => $u['id'] ?? null)
-            ->filter(fn ($u_id) => $u_id !== null)
-            ->toArray();
+        $userIds = $room->users
+            ->filter(fn (RoomUser $u) => $u->id !== $previousArtist)
+            ->pluck('id')
+            ->values()
+            ->all();
         $room->artist = fake()->randomElement($userIds);
-        $roomUsers = new Collection($room->users);
-        $roomUsers = $roomUsers->map(fn ($usr) => [
-            ...$usr,
-            'guessed' => false,
-        ]);
-        $room->users = $roomUsers->toArray();
+        $room->users = $room->users->map(fn (RoomUser $usr) => new RoomUser(
+            id: $usr->id,
+            name: $usr->name,
+            score: $usr->score,
+            guesses: $usr->guesses,
+            correct_guesses: $usr->correct_guesses,
+            guessed: false,
+            room_token: $usr->room_token,
+        ));
         $chat = $room->chat ?? [];
         $message = [
             'user_id' => '1',
