@@ -29,6 +29,7 @@ class Room extends Model
     protected $fillable = [
         'name',
         'owner',
+        'artist',
         'users',
         'settings',
         'chat',
