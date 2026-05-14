@@ -31,6 +31,7 @@ class User extends Authenticatable
         'password',
         'preferences',
         'stats',
+        'is_guest',
     ];
 
     protected $casts = [
@@ -57,6 +58,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_guest' => 'boolean',
         ];
     }
 }
