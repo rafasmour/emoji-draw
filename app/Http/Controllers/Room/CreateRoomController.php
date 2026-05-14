@@ -28,7 +28,6 @@ class CreateRoomController extends Controller
                     'score' => 0,
                     'guesses' => 0,
                     'correct_guesses' => 0,
-                    'drawings_guessed' => 0,
                     'guessed' => false,
                 ],
             ],

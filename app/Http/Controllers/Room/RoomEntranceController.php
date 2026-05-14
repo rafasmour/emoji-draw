@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\RoomUser;
 use App\Events\ChatMessage;
 use App\Events\Join;
 use App\Events\Leave;
@@ -12,7 +13,6 @@ use App\Models\Room;
 use App\Models\User;
 use App\UserInRoom;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 use function response;
@@ -30,16 +30,14 @@ class RoomEntranceController extends Controller
         if (count($room->users) === $room->settings->cap) {
             return Inertia::render('room/full', []);
         }
-        $roomUsers = $room->users;
-        $roomUsers[] = [
-            'id' => $request->user()->id,
-            'name' => $request->user()->name,
-            'score' => 0,
-            'guesses' => 0,
-            'correct_guesses' => 0,
-            'guessed' => false,
-        ];
-        $room->users = $roomUsers;
+        $room->users = $room->users->push(new RoomUser(
+            id: $request->user()->id,
+            name: $request->user()->name,
+            score: 0,
+            guesses: 0,
+            correct_guesses: 0,
+            guessed: false,
+        ));
         $roomChat = $room->chat ?? [];
         $message = [
             'user_id' => $request->user()->id,
@@ -59,10 +57,7 @@ class RoomEntranceController extends Controller
     public function leave(Request $request, Room $room)
     {
         $user = $request->user();
-        $newUsers = Collection::make($room->users ?? [])
-            ->filter(fn ($roomUser) => $roomUser['id'] !== $user->id)
-            ->values()
-            ->toArray();
+        $newUsers = $room->users->filter(fn (RoomUser $roomUser) => $roomUser->id !== $user->id)->values();
         if (count($newUsers) === count($room->users)) {
             return response()->json(['message' => 'user not found'], 404);
         }
@@ -103,10 +98,7 @@ class RoomEntranceController extends Controller
         if ($user->getKey() === $validated['user_id'] || ! $this->userInRoom($validated['user_id'], $room)) {
             return response()->json(['message' => "can't kick user", 403]);
         }
-        $newUsers = Collection::make($room->users ?? [])
-            ->filter(fn ($roomUser) => $roomUser['id'] === $user->id)
-            ->values()
-            ->toArray();
+        $newUsers = $room->users->filter(fn (RoomUser $roomUser) => $roomUser->id !== $validated['user_id'])->values();
         $playerKicked = User::find($validated['user_id']);
         if (count($newUsers) === count($room->users)) {
             return response()->json(['message' => 'user not found'], 404);
