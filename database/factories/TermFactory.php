@@ -17,7 +17,10 @@ class TermFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'value' => fake()->word(),
+            'difficulty' => fake()->randomElement(['easy', 'medium', 'hard']),
+            'category' => fake()->word(),
+            'language' => 'en',
         ];
     }
 }
