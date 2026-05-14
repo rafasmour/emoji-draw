@@ -13,9 +13,9 @@ x-php-build: &php-build
       XDEBUG_IDE_KEY: ${XDEBUG_IDE_KEY:-DOCKER}
       XDEBUG_LOG: /dev/stdout
       XDEBUG_LOG_LEVEL: 0
-    depends_on:
-      mongodb:
-        condition: service_healthy
+  depends_on:
+    mongodb:
+      condition: service_healthy
 
 services:
   web:
