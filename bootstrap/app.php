@@ -22,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'ensure.authenticated' => \App\Http\Middleware\EnsureAuthenticated::class,
+            'guest'                => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        ]);
     })
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
