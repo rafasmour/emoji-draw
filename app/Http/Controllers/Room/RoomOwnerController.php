@@ -16,10 +16,10 @@ class RoomOwnerController extends Controller
 
     public static function randomOwner(Room $room)
     {
-        $user_ids = array_map(fn ($usr) => $usr['id'], $room->users);
-        $randomIndex = fake()->numberBetween(0, count($user_ids) - 1);
+        $userIds = $room->users->pluck('id');
+        $randomIndex = fake()->numberBetween(0, $userIds->count() - 1);
         $old_owner = User::find($room->owner);
-        $room->owner = $user_ids[$randomIndex];
+        $room->owner = $userIds->get($randomIndex);
         $new_owner = User::find($room->owner);
 
         $chatMessages = $room->chat ?? [];

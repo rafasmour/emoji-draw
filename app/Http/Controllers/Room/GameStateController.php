@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\RoomUser;
 use App\Events\ChatMessage;
 use App\Events\GameOver;
 use App\Events\StartGame;
@@ -27,13 +28,13 @@ class GameStateController extends Controller
         if ($user->id !== $room->owner) {
             return response()->json(['message' => 'unauthorized'], 403);
         }
-        $roomSettings = $room->settings ?? [];
+        $roomSettings = $room->settings;
         $roomStatus = $room->status ?? [];
         $room->status = [
             ...$roomStatus,
             'started' => false,
             'round' => 0,
-            'time' => Carbon::now()->addSeconds($roomSettings['timeLimit'])->toDateTimeString('second'),
+            'time' => Carbon::now()->addSeconds($roomSettings->timeLimit)->toDateTimeString('second'),
         ];
         $roomChat = $room->chat ?? [];
         $message = [
@@ -46,17 +47,15 @@ class GameStateController extends Controller
         $roomStatus = $room->status;
         $roomStatus['started'] = true;
         $room->status = $roomStatus;
-        $roomUsers = $room->users;
-        $roomUsers = array_map(fn ($u) => $u['id'], $roomUsers);
-        $roomUsers = array_values(array_unique($roomUsers));
-        $randomIndex = fake()->numberBetween(0, count($roomUsers) - 1);
-        $room->artist = $roomUsers[$randomIndex];
+        $userIds = $room->users->pluck('id')->unique()->values();
+        $randomIndex = fake()->numberBetween(0, $userIds->count() - 1);
+        $room->artist = $userIds->get($randomIndex);
         $roomStatus = $room->status ?? [];
         $roomStatus['term'] = 'test';
         $room->status = $roomStatus;
-        $roomSettings = $room->settings ?? [];
+        $roomSettings = $room->settings;
         $room->save();
-        RoundHandler::dispatch($room)->delay(now()->addSeconds($roomSettings['timeLimit']));
+        RoundHandler::dispatch($room)->delay(now()->addSeconds($roomSettings->timeLimit));
         broadcast(new StartGame($room));
 
         return response()->redirectToRoute('room.game', $room);
@@ -79,17 +78,16 @@ class GameStateController extends Controller
         ];
         $roomChat[] = $message;
         $room->chat = $roomChat;
-        $users = $room->users;
-        foreach ($users as $user) {
-            $user = [
-                ...$user,
-                'guesses' => 0,
-                'correct_guesses' => 0,
-                'drawings_guessed' => 0,
-            ];
-        }
         $room->canvas = [];
-        $room->users = $users;
+        $room->users = $room->users->map(fn (RoomUser $user) => new RoomUser(
+            id: $user->id,
+            name: $user->name,
+            score: $user->score,
+            guesses: 0,
+            correct_guesses: 0,
+            guessed: false,
+            room_token: $user->room_token,
+        ));
         $room->save();
         broadcast(new StopGame($room));
         broadcast(new ChatMessage($room, $message));
@@ -99,31 +97,32 @@ class GameStateController extends Controller
 
     public function finish(Room $room)
     {
-        $roomUsers = $room->users;
-        foreach ($roomUsers as &$userStats) {
-            $user = User::find($userStats['id']);
+        $room->users = $room->users->map(function (RoomUser $userStats) {
+            $user = User::find($userStats->id);
             if ($user) {
-                $user->guess_count = $userStats['guesses'];
-                if ($userStats['guesses'] > 0) {
-                    $user->guess_accuracy = $userStats['correct_guesses'] / $userStats['guesses'];
+                $user->guess_count = $userStats->guesses;
+                if ($userStats->guesses > 0) {
+                    $user->guess_accuracy = $userStats->correct_guesses / $userStats->guesses;
                 }
                 $user->save();
             }
-            $userStats = [
-                ...$userStats,
-                'guesses' => 0,
-                'correct_guesses' => 0,
-                'drawings_guessed' => 0,
-            ];
-        }
-        unset($userStats);
+
+            return new RoomUser(
+                id: $userStats->id,
+                name: $userStats->name,
+                score: $userStats->score,
+                guesses: 0,
+                correct_guesses: 0,
+                guessed: false,
+                room_token: $userStats->room_token,
+            );
+        });
         $roomStatus = $room->status;
         $room->status = [
             ...$roomStatus,
             'round' => 0,
             'time' => 0,
         ];
-        $room->users = $roomUsers;
         $message = [
             'user_id' => '1',
             'user' => 'System',
