@@ -3,7 +3,7 @@ import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
 import { Room } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
 
@@ -37,10 +37,16 @@ export default function Game() {
             setArtist(e.artist_id);
         },
     );
+    const { listen: listenGameOver } = useSocket(
+        `room.${room.id}`,
+        'GameOver',
+        () => router.visit(`/room/${room.id}`),
+    );
     console.log(room.canvas);
     useEffect(() => {
         listenChangeOwner();
         listenStartRound();
+        listenGameOver();
     }, []);
     const users = room.users;
     return (
