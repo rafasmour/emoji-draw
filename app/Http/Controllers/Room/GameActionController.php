@@ -7,6 +7,7 @@ use App\Events\CanvasStroke;
 use App\Events\ChatMessage;
 use App\Events\CorrectGuess;
 use App\Http\Controllers\Controller;
+use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Rules\EmojiOnly;
 use Illuminate\Http\Request;
@@ -53,7 +54,8 @@ class GameActionController extends Controller
             return response()->json(['message' => "Artist Can't guess"], 403);
         }
         $guess = $validated['guess'];
-        $userStats = $room->users->firstWhere('id', $request->user()->id);
+        $correct = $guess === $room->status->term;
+        $userStats = $room->users->firstWhere('id', $user->id);
         if ($userStats->guessed) {
             return response()->json(['message' => 'already guessed'], 403);
         }
@@ -66,8 +68,7 @@ class GameActionController extends Controller
             guessed: $userStats->guessed,
             room_token: $userStats->room_token,
         );
-        $roomStatus = $room->status;
-        if ($guess === $roomStatus['term']) {
+        if ($correct) {
             $userStats = new RoomUser(
                 id: $userStats->id,
                 name: $userStats->name,
@@ -98,8 +99,14 @@ class GameActionController extends Controller
             $room->chat = $chat;
             broadcast(new ChatMessage($room, $message));
         }
-        $room->status = $roomStatus;
         $room->save();
-        broadcast(new CorrectGuess($request->user(), $room));
+        broadcast(new CorrectGuess($user, $room));
+
+        if ($correct) {
+            $nonArtistUsers = $room->users->filter(fn (RoomUser $u) => $u->id !== $room->artist);
+            if ($nonArtistUsers->every(fn (RoomUser $u) => $u->guessed)) {
+                RoundHandler::dispatch($room, $room->status->round);
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Room;
 
 use App\DataObjects\RoomSettings;
+use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
 use App\Models\Room;
 use App\Models\User;
@@ -42,7 +43,7 @@ class RoomEntranceTest extends TestCase
             'chat' => [],
             'canvas' => [],
             'started' => false,
-            'status' => ['started' => false, 'round' => 0, 'time' => 0],
+            'status' => new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0),
         ]);
     }
 

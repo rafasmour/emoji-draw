@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\RoomStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use Illuminate\Http\Request;
@@ -42,12 +43,13 @@ class CreateRoomController extends Controller
             ],
             'chat' => [],
             'canvas' => [],
-            'status' => [
-                'round' => 0,
-                'time' => 0,
-                'term' => '',
-                'started' => false,
-            ],
+            'status' => new RoomStatus(
+                started: false,
+                round: 0,
+                time: '0',
+                term: '',
+                guesses: 0,
+            ),
 
         ]);
         $room->save();

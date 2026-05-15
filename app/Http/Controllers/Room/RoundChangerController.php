@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
 use App\Events\ChatMessage;
 use App\Events\ClearCanvas;
@@ -19,12 +20,13 @@ class RoundChangerController extends Controller
     {
         $roomSettings = $room->settings;
         $term = $this->randomTerm();
-        $roomStatus = $room->status;
-        $roomStatus['term'] = $term;
-        $roomStatus['round'] += 1;
-        $roomStatus['guesses'] = 0;
-        $roomStatus['time'] = Carbon::now()->addSeconds($roomSettings->timeLimit)->toDateTimeString('second');
-        $room->status = $roomStatus;
+        $room->status = new RoomStatus(
+            started: $room->status->started,
+            round: $room->status->round + 1,
+            time: Carbon::now()->addSeconds($roomSettings->timeLimit)->toDateTimeString('second'),
+            term: $term,
+            guesses: 0,
+        );
         $room->canvas = [];
         $previousArtist = $room->artist;
         $userIds = $room->users
