@@ -6,8 +6,8 @@ use App\Models\Term;
 
 trait RandomTerm
 {
-    public function randomTerm()
+    public function randomTerm(): string
     {
-        return Term::all()->random(1)->first()->value;
+        return Term::raw(fn ($collection) => $collection->aggregate([['$sample' => ['size' => 1]]]))->first()->value;
     }
 }
