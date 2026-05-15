@@ -59,12 +59,13 @@ export default function Lobby() {
     }, [room]);
 
     return (
-        <div
-            className={
-                'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
-            }
-        >
+        <>
             <ToastContainer position="bottom-right" />
+            <div
+                className={
+                    'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
+                }
+            >
             <RoomUsers
                 roomId={room.id}
                 defaultUsers={users}
@@ -86,6 +87,7 @@ export default function Lobby() {
                 defaultChat={room.chat}
                 className={`col-span-3 row-span-3 h-full w-full`}
             />
-        </div>
+            </div>
+        </>
     );
 }
