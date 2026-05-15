@@ -97,6 +97,9 @@ export function RoomCanvas({
             >
                 {isArtist ? (
                     <>
+                        <span className="text-lg font-semibold tracking-wide">
+                            {term}
+                        </span>
                         <div>
                             <Button
                                 className={'py-10 text-4xl'}
