@@ -8,6 +8,12 @@ trait RandomTerm
 {
     public function randomTerm(): string
     {
-        return Term::raw(fn ($collection) => $collection->aggregate([['$sample' => ['size' => 1]]]))->first()->value;
+        $count = Term::query()->count();
+
+        if ($count === 0) {
+            throw new \RuntimeException('No terms in database. Run TermSeeder first.');
+        }
+
+        return Term::query()->skip(random_int(0, $count - 1))->first()->value;
     }
 }
