@@ -7,6 +7,7 @@ import { Room } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
+import { ToastContainer } from 'react-toastify';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -25,7 +26,7 @@ export default function Game() {
     useEffect(() => {
         setIsArtist(() => artist === props.auth.user.id);
     }, [artist]);
-    const [term, setTerm] = useState<string>(room.status['term']);
+    const [term, setTerm] = useState<string>(room.status.term);
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
@@ -57,13 +58,14 @@ export default function Game() {
                 'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
             }
         >
+            <ToastContainer position="bottom-right" />
             <RoomCanvas
                 roomId={room.id}
                 term={term}
                 defaultStrokes={room.canvas}
                 isArtist={isArtist}
-                timeLeft={room.status['time']}
-                roundDuration={room.settings['timeLimit']}
+                timeLeft={room.status.time}
+                roundDuration={room.settings.timeLimit}
                 className={
                     'col-span-7 row-span-5 flex flex-col gap-4 border border-accent'
                 }

@@ -15,6 +15,10 @@ class DestroyRoomController extends Controller
             broadcast(new RoomDestroyed($room));
             $room->delete();
 
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('room.rooms')]);
+            }
+
             return response()->redirectToRoute('room.rooms');
         }
 

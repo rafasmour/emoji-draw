@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren } from 'react';
+import { ToastContainer } from 'react-toastify';
 
 export default function AppSidebarLayout({
     children,
@@ -16,6 +17,7 @@ export default function AppSidebarLayout({
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>
+            <ToastContainer position="bottom-right" />
         </AppShell>
     );
 }

@@ -8,6 +8,7 @@ import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
+import { ToastContainer } from 'react-toastify';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -63,6 +64,7 @@ export default function Lobby() {
                 'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
             }
         >
+            <ToastContainer position="bottom-right" />
             <RoomUsers
                 roomId={room.id}
                 defaultUsers={users}

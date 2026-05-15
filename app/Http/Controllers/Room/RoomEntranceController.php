@@ -54,6 +54,10 @@ class RoomEntranceController extends Controller
         broadcast(new Join($request->user(), $room))->toOthers();
         broadcast(new ChatMessage($room, $message));
 
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route('room.lobby', $room)]);
+        }
+
         return response()->redirectToRoute('room.lobby', $room);
     }
 
@@ -66,6 +70,10 @@ class RoomEntranceController extends Controller
         }
         if (count($newUsers) === 0) {
             $room->delete();
+
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('room.rooms')]);
+            }
 
             return response()->redirectToRoute('room.rooms');
         }
@@ -85,6 +93,10 @@ class RoomEntranceController extends Controller
         }
         broadcast(new Leave($user, $room))->toOthers();
         broadcast(new ChatMessage($room, $message));
+
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route('room.rooms')]);
+        }
 
         return response()->redirectToRoute('room.rooms');
     }
