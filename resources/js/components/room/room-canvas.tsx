@@ -17,6 +17,7 @@ interface RoomCanvasProps {
     isArtist: boolean;
     className?: string;
     term: string;
+    hint: string;
     timeLeft: number;
     roundDuration: number;
     roomId: string;
@@ -26,6 +27,7 @@ export function RoomCanvas({
     isArtist,
     className,
     term,
+    hint,
     roomId,
     timeLeft,
     roundDuration,
@@ -133,13 +135,9 @@ export function RoomCanvas({
                         />
                     </>
                 ) : (
-                    <>
-                        <span>
-                            {term.split('').map(() => (
-                                <span className={'px-2'}>_</span>
-                            ))}
-                        </span>
-                    </>
+                    <span className="font-mono text-xl tracking-widest">
+                        {hint || term.replace(/[^ ]/g, '_').split('').join(' ')}
+                    </span>
                 )}
                 <div
                     className={

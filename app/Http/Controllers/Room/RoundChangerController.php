@@ -8,6 +8,7 @@ use App\Events\ChatMessage;
 use App\Events\ClearCanvas;
 use App\Events\StartRound;
 use App\Http\Controllers\Controller;
+use App\Jobs\HintHandler;
 use App\Models\Room;
 use App\RandomTerm;
 use Carbon\Carbon;
@@ -57,5 +58,7 @@ class RoundChangerController extends Controller
         broadcast(new StartRound($room));
         broadcast(new ChatMessage($room, $message));
         broadcast(new ClearCanvas($room));
+        HintHandler::dispatch($room, $room->status->round)
+            ->delay(now()->addSeconds(HintHandler::HINT_INTERVAL_SECONDS));
     }
 }

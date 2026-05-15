@@ -27,6 +27,7 @@ export default function Game() {
         setIsArtist(() => artist === props.auth.user.id);
     }, [artist]);
     const [term, setTerm] = useState<string>(room.status.term);
+    const [hint, setHint] = useState<string>('');
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
@@ -38,6 +39,14 @@ export default function Game() {
         (e) => {
             setTerm(e.term ?? '');
             setArtist(e.artist_id);
+            setHint(e.initial_hint);
+        },
+    );
+    const { listen: listenRevealHint } = useSocket(
+        `room.${room.id}`,
+        'RevealHint',
+        (e) => {
+            if (!isArtist) setHint(e.hint);
         },
     );
     const { listen: listenGameOver } = useSocket(
@@ -45,10 +54,10 @@ export default function Game() {
         'GameOver',
         () => router.visit(`/room/${room.id}`),
     );
-    console.log(room.canvas);
     useEffect(() => {
         listenChangeOwner();
         listenStartRound();
+        listenRevealHint();
         listenGameOver();
     }, []);
     const users = room.users;
@@ -62,6 +71,7 @@ export default function Game() {
             <RoomCanvas
                 roomId={room.id}
                 term={term}
+                hint={hint}
                 defaultStrokes={room.canvas}
                 isArtist={isArtist}
                 timeLeft={room.status.time}

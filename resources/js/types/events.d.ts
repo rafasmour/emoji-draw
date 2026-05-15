@@ -64,11 +64,17 @@ export interface EventPayloads {
         message: string;
         room_id: string;
     };
+    RevealHint: {
+        event: 'RevealHint';
+        hint: string;
+        round: number;
+    };
     StartRound: {
         event: 'StartRound';
         term: string;
         artist_id: string;
         time: string;
+        initial_hint: string;
     };
     StopGame: {
         event: 'StopGame';
