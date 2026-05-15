@@ -11,7 +11,7 @@ trait RandomTerm
         $count = Term::query()->count();
 
         if ($count === 0) {
-            throw new \RuntimeException('No terms in database. Run TermSeeder first.');
+            return Term::factory()->create()->value;
         }
 
         return Term::query()->skip(random_int(0, $count - 1))->first()->value;
