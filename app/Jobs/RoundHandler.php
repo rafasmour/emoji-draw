@@ -7,10 +7,11 @@ use App\Http\Controllers\Room\RoundChangerController;
 use App\Models\Room;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\SerializesModels;
 
 class RoundHandler implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SerializesModels;
 
     /**
      * Create a new job instance.

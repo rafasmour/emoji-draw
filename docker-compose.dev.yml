@@ -63,7 +63,7 @@ services:
   queue:
     <<: *php-build
     restart: unless-stopped
-    command: php artisan queue:listen --tries=3
+    command: php artisan queue:listen mongodb --tries=3
     env_file:
       - .env
     user: "${UID:-1000}:${GID:-1000}"
