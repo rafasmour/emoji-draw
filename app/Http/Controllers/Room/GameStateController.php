@@ -117,11 +117,12 @@ class GameStateController extends Controller
                 room_token: $userStats->room_token,
             );
         });
-        $roomStatus = $room->status;
         $room->status = [
-            ...$roomStatus,
             'round' => 0,
             'time' => 0,
+            'term' => '',
+            'started' => false,
+            'guesses' => 0,
         ];
         $message = [
             'user_id' => '1',
