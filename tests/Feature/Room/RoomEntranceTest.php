@@ -42,6 +42,7 @@ class RoomEntranceTest extends TestCase
             'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: $cap, rounds: 3, categories: [], language: 'en', timeLimit: 60),
             'chat' => [],
             'canvas' => [],
+            'kicked_users' => [],
             'started' => false,
             'status' => new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0),
         ]);
@@ -127,5 +128,47 @@ class RoomEntranceTest extends TestCase
         $this->actingAs($other)
             ->post(route('room.kick', $room), ['user_id' => $owner->id])
             ->assertStatus(403);
+    }
+
+    public function test_kick_adds_user_to_kicked_users(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, [$other]);
+
+        $this->actingAs($owner)
+            ->post(route('room.kick', $room), ['user_id' => $other->id]);
+
+        $room->refresh();
+        $this->assertContains($other->id, $room->kicked_users);
+    }
+
+    public function test_kicked_user_cannot_rejoin(): void
+    {
+        $owner = User::factory()->create();
+        $kicked = User::factory()->create();
+        $room = $this->makeRoom($owner, [$kicked]);
+
+        $this->actingAs($owner)
+            ->post(route('room.kick', $room), ['user_id' => $kicked->id]);
+
+        $this->actingAs($kicked)
+            ->post(route('room.join'), ['room_id' => $room->id])
+            ->assertStatus(403);
+    }
+
+    public function test_non_kicked_user_can_join(): void
+    {
+        $owner = User::factory()->create();
+        $joiner = User::factory()->create();
+        $kicked = User::factory()->create();
+        $room = $this->makeRoom($owner, [$kicked]);
+
+        $this->actingAs($owner)
+            ->post(route('room.kick', $room), ['user_id' => $kicked->id]);
+
+        $this->actingAs($joiner)
+            ->post(route('room.join'), ['room_id' => $room->id])
+            ->assertRedirect(route('room.lobby', $room));
     }
 }

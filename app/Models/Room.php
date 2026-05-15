@@ -22,6 +22,7 @@ use MongoDB\Laravel\Eloquent\Model;
  * @property RoomStatus $status
  * @property Collection<int, ChatMessage> $chat
  * @property Collection<int, CanvasElement> $canvas
+ * @property array<string> $kicked_users
  */
 class Room extends Model
 {
@@ -39,6 +40,7 @@ class Room extends Model
         'canvas',
         'started',
         'status',
+        'kicked_users',
     ];
 
     protected $casts = [
@@ -51,6 +53,7 @@ class Room extends Model
         'started' => 'boolean',
         'status' => RoomStatusCast::class,
         'canvas' => JsonToCollectionCast::class.':'.CanvasElement::class,
+        'kicked_users' => 'array',
     ];
 
     /** @use HasFactory<RoomFactory> */

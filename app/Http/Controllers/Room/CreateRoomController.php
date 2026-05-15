@@ -43,6 +43,7 @@ class CreateRoomController extends Controller
             ],
             'chat' => [],
             'canvas' => [],
+            'kicked_users' => [],
             'status' => new RoomStatus(
                 started: false,
                 round: 0,

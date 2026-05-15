@@ -27,6 +27,9 @@ class RoomEntranceController extends Controller
             'room_id' => ['required', 'exists:rooms,id'],
         ]);
         $room = Room::find($validated['room_id']);
+        if (in_array($request->user()->id, $room->kicked_users ?? [], true)) {
+            return response()->json(['message' => 'You have been banned from this room.'], 403);
+        }
         if (count($room->users) === $room->settings->cap) {
             return Inertia::render('room/full', []);
         }
@@ -104,6 +107,7 @@ class RoomEntranceController extends Controller
             return response()->json(['message' => 'user not found'], 404);
         }
         $room->users = $newUsers;
+        $room->kicked_users = array_merge($room->kicked_users ?? [], [$validated['user_id']]);
         $roomChat = $room->chat ?? [];
         $message = [
             'user_id' => $request->user()->id,
