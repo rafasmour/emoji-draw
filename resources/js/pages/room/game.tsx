@@ -2,6 +2,7 @@ import { RoomCanvas } from '@/components/room/room-canvas';
 import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
+import { useRoomLeave } from '@/hooks/use-room-leave';
 import { Room } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
@@ -20,6 +21,7 @@ export default function Game() {
     const [owner, setOwner] = useState<string>(room.owner);
     const [artist, setArtist] = useState<string>(room.artist);
     const [isArtist, setIsArtist] = useState();
+    useRoomLeave(room.id);
     useEffect(() => {
         setIsArtist(() => artist === props.auth.user.id);
     }, [artist]);
