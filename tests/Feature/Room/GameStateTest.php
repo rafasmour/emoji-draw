@@ -6,6 +6,7 @@ use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
 use App\Http\Controllers\Room\GameStateController;
 use App\Jobs\RoundHandler;
+use App\Http\Controllers\Room\GameStateController;
 use App\Models\Room;
 use App\Models\Term;
 use App\Models\User;

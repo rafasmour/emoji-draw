@@ -64,13 +64,6 @@ class TermSeeder extends Seeder
 
     public function run(): void
     {
-        foreach ($this->terms as $term) {
-            Term::create([
-                'value' => $term['value'],
-                'difficulty' => $term['difficulty'],
-                'category' => $term['category'],
-                'language' => 'en',
-            ]);
-        }
+        Term::factory()->count(50)->create();
     }
 }
