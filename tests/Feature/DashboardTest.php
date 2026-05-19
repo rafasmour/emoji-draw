@@ -10,9 +10,12 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guests_are_redirected_to_the_login_page()
+    public function test_unauthenticated_users_are_auto_logged_in_as_guests()
     {
-        $this->get(route('dashboard'))->assertRedirect(route('login'));
+        $this->assertGuest();
+        $this->get(route('dashboard'))->assertOk();
+        $this->assertAuthenticated();
+        $this->assertTrue((bool) auth()->user()->is_guest);
     }
 
     public function test_authenticated_users_can_visit_the_dashboard()

@@ -7,17 +7,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::connection('mongodb')->collection('rooms')->whereNull('kicked_users')->update(
-            ['$set' => ['kicked_users' => []]],
-            ['multiple' => true],
+        DB::connection('mongodb')->table('rooms')->whereNull('kicked_users')->update(
+            ['kicked_users' => []]
         );
     }
 
     public function down(): void
     {
-        DB::connection('mongodb')->collection('rooms')->update(
-            ['$unset' => ['kicked_users' => '']],
-            ['multiple' => true],
+        DB::connection('mongodb')->table('rooms')->update(
+            ['$unset' => ['kicked_users' => '']]
         );
     }
 };
