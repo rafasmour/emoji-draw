@@ -12,26 +12,27 @@ class GameViewController extends Controller
 {
     public function index(Request $request, Room $room)
     {
-        if (! $room->status['started']) {
+        if (! $room->status->started) {
             return redirect()->route('room.lobby', $room);
         }
-        $roomSettings = $room->settings;
-        $roomStatus = $room->status;
-        $roomStatus = [
-            ...$roomStatus,
-            'time' => Carbon::now()->diffInSeconds((string) $roomStatus['time']),
-        ];
+        $status = $room->status;
 
         return Inertia::render('room/game', [
             'room' => [
                 'id' => $room->getKey(),
                 'name' => $room->name,
-                'settings' => $roomSettings,
+                'settings' => $room->settings,
                 'users' => $room->users,
                 'chat' => $room->chat,
                 'owner' => $room->owner,
                 'canvas' => $room->canvas,
-                'status' => $roomStatus,
+                'status' => [
+                    'started' => $status->started,
+                    'round' => $status->round,
+                    'time' => Carbon::now()->diffInSeconds($status->time),
+                    'term' => $status->term,
+                    'guesses' => $status->guesses,
+                ],
                 'artist' => $room->artist,
             ],
         ]);

@@ -27,6 +27,9 @@ class RoomEntranceController extends Controller
             'room_id' => ['required', 'exists:rooms,id'],
         ]);
         $room = Room::find($validated['room_id']);
+        if (in_array($request->user()->id, $room->kicked_users ?? [], true)) {
+            return response()->json(['message' => 'You have been banned from this room.'], 403);
+        }
         if (count($room->users) === $room->settings->cap) {
             return Inertia::render('room/full', []);
         }
@@ -51,6 +54,10 @@ class RoomEntranceController extends Controller
         broadcast(new Join($request->user(), $room))->toOthers();
         broadcast(new ChatMessage($room, $message));
 
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route('room.lobby', $room)]);
+        }
+
         return response()->redirectToRoute('room.lobby', $room);
     }
 
@@ -63,6 +70,10 @@ class RoomEntranceController extends Controller
         }
         if (count($newUsers) === 0) {
             $room->delete();
+
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('room.rooms')]);
+            }
 
             return response()->redirectToRoute('room.rooms');
         }
@@ -82,6 +93,10 @@ class RoomEntranceController extends Controller
         }
         broadcast(new Leave($user, $room))->toOthers();
         broadcast(new ChatMessage($room, $message));
+
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route('room.rooms')]);
+        }
 
         return response()->redirectToRoute('room.rooms');
     }
@@ -104,6 +119,7 @@ class RoomEntranceController extends Controller
             return response()->json(['message' => 'user not found'], 404);
         }
         $room->users = $newUsers;
+        $room->kicked_users = array_merge($room->kicked_users ?? [], [$validated['user_id']]);
         $roomChat = $room->chat ?? [];
         $message = [
             'user_id' => $request->user()->id,

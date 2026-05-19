@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Casts\JsonToCollectionCast;
 use App\Casts\RoomSettingsCast;
+use App\Casts\RoomStatusCast;
 use App\DataObjects\CanvasElement;
 use App\DataObjects\ChatMessage;
 use App\DataObjects\RoomSettings;
+use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
 use Database\Factories\RoomFactory;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -17,8 +19,10 @@ use MongoDB\Laravel\Eloquent\Model;
 /**
  * @property Collection<int, RoomUser> $users
  * @property RoomSettings $settings
+ * @property RoomStatus $status
  * @property Collection<int, ChatMessage> $chat
  * @property Collection<int, CanvasElement> $canvas
+ * @property array<string> $kicked_users
  */
 class Room extends Model
 {
@@ -36,6 +40,7 @@ class Room extends Model
         'canvas',
         'started',
         'status',
+        'kicked_users',
     ];
 
     protected $casts = [
@@ -46,8 +51,9 @@ class Room extends Model
         'settings' => RoomSettingsCast::class,
         'chat' => JsonToCollectionCast::class.':'.ChatMessage::class,
         'started' => 'boolean',
-        'status' => 'array',
+        'status' => RoomStatusCast::class,
         'canvas' => JsonToCollectionCast::class.':'.CanvasElement::class,
+        'kicked_users' => 'array',
     ];
 
     /** @use HasFactory<RoomFactory> */

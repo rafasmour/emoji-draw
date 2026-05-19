@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Concerns\BuildsHint;
 use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -12,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 
 class StartRound implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use BuildsHint, Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
@@ -25,12 +26,15 @@ class StartRound implements ShouldBroadcastNow
 
     public string $time;
 
+    public string $initial_hint;
+
     public function __construct(
         private Room $room,
     ) {
-        $this->term = $room->status['term'];
+        $this->term = $room->status->term;
         $this->artist_id = $room->artist;
-        $this->time = now()->diffInSeconds((string) $room->status['time']);
+        $this->time = now()->diffInSeconds($room->status->time);
+        $this->initial_hint = $this->buildHint($room->status->term, 0);
     }
 
     /**

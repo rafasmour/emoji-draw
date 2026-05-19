@@ -18,9 +18,8 @@ class RoundHandler implements ShouldQueue
      */
     public function __construct(
         private Room $room,
-    ) {
-        //
-    }
+        private int $forRound = -1,
+    ) {}
 
     /**
      * Execute the job.
@@ -28,9 +27,15 @@ class RoundHandler implements ShouldQueue
     public function handle(): void
     {
         $this->room->refresh();
-        $roomStatus = $this->room->status;
-        $currentRound = $roomStatus['round'];
+        $currentRound = $this->room->status->round;
         $roomSettings = $this->room->settings;
+
+        if ($this->forRound >= 0 && $currentRound !== $this->forRound) {
+            $this->delete();
+
+            return;
+        }
+
         if ($currentRound === $roomSettings->rounds) {
             $gameInitializer = new GameStateController;
             $gameInitializer->finish($this->room);

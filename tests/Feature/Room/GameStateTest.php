@@ -3,11 +3,15 @@
 namespace Tests\Feature\Room;
 
 use App\DataObjects\RoomSettings;
+use App\DataObjects\RoomStatus;
+use App\Http\Controllers\Room\GameStateController;
+use App\Jobs\RoundHandler;
 use App\Http\Controllers\Room\GameStateController;
 use App\Models\Room;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class GameStateTest extends TestCase
@@ -29,7 +33,7 @@ class GameStateTest extends TestCase
         parent::tearDown();
     }
 
-    private function makeRoom(User $owner, User $other, array $statusOverrides = []): Room
+    private function makeRoom(User $owner, User $other, ?RoomStatus $status = null): Room
     {
         return Room::create([
             'name' => 'Test Room',
@@ -43,7 +47,7 @@ class GameStateTest extends TestCase
             'chat' => [],
             'canvas' => [['x' => 1, 'y' => 1, 'emoji' => '😀', 'size' => 10]],
             'started' => true,
-            'status' => array_merge(['started' => true, 'round' => 3, 'time' => '2026-01-01 00:01:00', 'term' => 'cat', 'guesses' => 2], $statusOverrides),
+            'status' => $status ?? new RoomStatus(started: true, round: 3, time: '2026-01-01 00:01:00', term: 'cat', guesses: 2),
         ]);
     }
 
@@ -56,7 +60,7 @@ class GameStateTest extends TestCase
         (new GameStateController)->finish($room);
 
         $room->refresh();
-        $this->assertFalse($room->status['started']);
+        $this->assertFalse($room->status->started);
     }
 
     public function test_finish_resets_round_and_time(): void
@@ -68,8 +72,8 @@ class GameStateTest extends TestCase
         (new GameStateController)->finish($room);
 
         $room->refresh();
-        $this->assertEquals(0, $room->status['round']);
-        $this->assertEquals(0, $room->status['time']);
+        $this->assertEquals(0, $room->status->round);
+        $this->assertEquals('0', $room->status->time);
     }
 
     public function test_finish_clears_term(): void
@@ -81,7 +85,7 @@ class GameStateTest extends TestCase
         (new GameStateController)->finish($room);
 
         $room->refresh();
-        $this->assertEquals('', $room->status['term']);
+        $this->assertEquals('', $room->status->term);
     }
 
     public function test_start_succeeds_after_finish(): void
@@ -113,5 +117,62 @@ class GameStateTest extends TestCase
         $response = (new GameStateController)->start($request, $room);
 
         $this->assertEquals(403, $response->getStatusCode());
+    }
+
+    public function test_start_returns_json_redirect_when_expects_json(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, $other, new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0));
+
+        $response = $this->actingAs($owner)
+            ->postJson(route('room.start', $room))
+            ->assertOk()
+            ->assertJsonStructure(['redirect']);
+
+        $this->assertStringContainsString('/room/', $response->json('redirect'));
+    }
+
+    public function test_stale_round_handler_self_deletes(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, $other, new RoomStatus(started: true, round: 2, time: '2099-01-01 00:00:00', term: 'cat', guesses: 0));
+
+        $job = new RoundHandler($room, forRound: 1);
+        $job->handle();
+
+        $room->refresh();
+        $this->assertEquals(2, $room->status->round);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_round_ends_early_when_all_non_artists_guessed(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = Room::create([
+            'name' => 'Early Round Room',
+            'owner' => $owner->id,
+            'artist' => $owner->id,
+            'users' => [
+                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
+                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
+            ],
+            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
+            'chat' => [],
+            'canvas' => [],
+            'started' => true,
+            'status' => new RoomStatus(started: true, round: 1, time: '2099-01-01 00:00:00', term: 'apple', guesses: 0),
+        ]);
+
+        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
+        $request->setUserResolver(fn () => $other);
+
+        (new \App\Http\Controllers\Room\GameActionController)->guess($request, $room);
+
+        Queue::assertPushed(RoundHandler::class);
     }
 }

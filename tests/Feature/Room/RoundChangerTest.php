@@ -3,6 +3,7 @@
 namespace Tests\Feature\Room;
 
 use App\DataObjects\RoomSettings;
+use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
 use App\Http\Controllers\Room\RoundChangerController;
 use App\Models\Room;
@@ -43,7 +44,7 @@ class RoundChangerTest extends TestCase
             'chat' => [],
             'canvas' => [['x' => 100, 'y' => 100, 'emoji' => '😀', 'size' => 10]],
             'started' => true,
-            'status' => ['started' => true, 'round' => 1, 'time' => 0, 'term' => 'test', 'guesses' => 0],
+            'status' => new RoomStatus(started: true, round: 1, time: '2099-01-01 00:00:00', term: 'test', guesses: 0),
         ]);
     }
 
@@ -68,7 +69,7 @@ class RoundChangerTest extends TestCase
         (new RoundChangerController)->change($room);
 
         $room->refresh();
-        $this->assertEquals(2, $room->status['round']);
+        $this->assertEquals(2, $room->status->round);
     }
 
     public function test_round_change_clears_canvas(): void
@@ -107,7 +108,7 @@ class RoundChangerTest extends TestCase
         (new RoundChangerController)->change($room);
 
         $room->refresh();
-        $this->assertEquals($term->value, $room->status['term']);
+        $this->assertEquals($term->value, $room->status->term);
     }
 
     public function test_round_change_stores_time_as_datetime_string(): void
@@ -120,7 +121,7 @@ class RoundChangerTest extends TestCase
         (new RoundChangerController)->change($room);
 
         $room->refresh();
-        $this->assertIsString($room->status['time']);
-        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $room->status['time']);
+        $this->assertIsString($room->status->time);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $room->status->time);
     }
 }

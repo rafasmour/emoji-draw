@@ -1,12 +1,14 @@
 import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { Button } from '@/components/ui/button';
+import { useSocket } from '@/connection/echo';
+import { useRoomLeave } from '@/hooks/use-room-leave';
 import { destroyRoom, leaveRoom, startGame } from '@/requests/room/room';
 import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
-import { useSocket } from '@/connection/echo';
+import { ToastContainer } from 'react-toastify';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -18,6 +20,7 @@ export default function Lobby() {
     const currentUser = props.auth.user;
     const [room, setRoom] = useState<Room>(defaultRoom);
     const users = room.users;
+    useRoomLeave(room.id);
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
@@ -56,11 +59,13 @@ export default function Lobby() {
     }, [room]);
 
     return (
-        <div
-            className={
-                'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
-            }
-        >
+        <>
+            <ToastContainer position="bottom-right" />
+            <div
+                className={
+                    'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
+                }
+            >
             <RoomUsers
                 roomId={room.id}
                 defaultUsers={users}
@@ -82,6 +87,7 @@ export default function Lobby() {
                 defaultChat={room.chat}
                 className={`col-span-3 row-span-3 h-full w-full`}
             />
-        </div>
+            </div>
+        </>
     );
 }
