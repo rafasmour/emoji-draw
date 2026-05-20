@@ -1,25 +1,32 @@
 #!/bin/bash
 set -e
 
-# Load required environment variables
-export $(grep -E "^(MONGO_INITDB_ROOT_USERNAME|MONGO_INITDB_ROOT_PASSWORD|MONGO_INITDB_DATABASE|MONGODB_DB|MONGODB_USER|MONGODB_PASS)=" /docker-entrypoint-initdb.d/.env)
+# Validate required environment variables provided by docker-compose
+required_vars=(
+  MONGO_INITDB_ROOT_USERNAME
+  MONGO_INITDB_ROOT_PASSWORD
+  MONGODB_DB
+  MONGODB_USER
+  MONGODB_PASS
+)
 
-# Create the root user in the admin DB
-mongosh <<EOF
-use admin
-db.createUser({
-  user: "$MONGO_INITDB_ROOT_USERNAME",
-  pwd: "$MONGO_INITDB_ROOT_PASSWORD",
-  roles: [ { role: "root", db: "admin" } ]
-})
-EOF
+for var in "${required_vars[@]}"; do
+  if [ -z "${!var}" ]; then
+    echo "Missing required environment variable: ${var}" >&2
+    exit 1
+  fi
+done
 
-# Create the application user in the target DB
-mongosh <<EOF
+# Root user is already created by the official MongoDB image when
+# MONGO_INITDB_ROOT_USERNAME and MONGO_INITDB_ROOT_PASSWORD are set.
+# Create application user in target DB only.
+mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin <<EOF
 use $MONGODB_DB
-db.createUser({
-  user: "$MONGODB_USER",
-  pwd: "$MONGODB_PASS",
-  roles: [ { role: "dbOwner", db: "$MONGODB_DB" } ]
-})
+if (!db.getUser("$MONGODB_USER")) {
+  db.createUser({
+    user: "$MONGODB_USER",
+    pwd: "$MONGODB_PASS",
+    roles: [ { role: "dbOwner", db: "$MONGODB_DB" } ]
+  })
+}
 EOF

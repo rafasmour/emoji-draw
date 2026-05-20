@@ -15,10 +15,10 @@ class EnsureAuthenticated
     {
         if (! $request->user()) {
             $guest = User::create([
-                'name'        => 'Guest_' . Str::upper(Str::random(6)),
-                'email'       => 'guest_' . Str::uuid() . '@guest.local',
-                'password'    => null,
-                'is_guest'    => true,
+                'name' => 'Guest_'.Str::upper(Str::random(6)),
+                'email' => 'guest_'.Str::uuid().'@guest.local',
+                'password' => null,
+                'is_guest' => true,
                 'preferences' => ['volume' => 100, 'mute' => false],
             ]);
 
