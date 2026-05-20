@@ -22,11 +22,15 @@ class PlayerKicked implements ShouldBroadcastNow
 
     public string $user_id;
 
+    public string $message;
+
     public function __construct(
         User $userKicked,
         private Room $room,
+        string $message,
     ) {
         $this->user_id = $userKicked->getKey();
+        $this->message = $message;
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Events\Join;
 use App\Events\Leave;
 use App\Events\OwnerLeave;
 use App\Events\PlayerKicked;
+use App\Events\RoomDestroyed;
 use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\RoomEntranceServiceInterface;
 use App\Models\Room;
@@ -25,7 +26,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
     public function join(User $user, Room $room): void
     {
         if (in_array($user->id, $room->kicked_users ?? [], true)) {
-            throw new HttpException(403, 'You have been banned from this room.');
+            throw new HttpException(403, "You can't enter this room. You were kicked by the owner and can't rejoin.");
         }
 
         if (count($room->users) === $room->settings->cap) {
@@ -64,7 +65,9 @@ class RoomEntranceService implements RoomEntranceServiceInterface
             throw new HttpException(404, 'User not found in room.');
         }
 
-        if (count($newUsers) === 0) {
+        if (count($newUsers) <= 1) {
+            $room->users = $newUsers;
+            broadcast(new RoomDestroyed($room));
             $room->delete();
 
             return;
@@ -110,6 +113,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $playerKicked = User::find($targetUserId);
         $room->users = $newUsers;
         $room->kicked_users = array_merge($room->kicked_users ?? [], [$targetUserId]);
+        $kickedMessage = "You were kicked by {$owner->name}. You can't rejoin this room.";
 
         $message = [
             'user_id' => $owner->id,
@@ -122,7 +126,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $room->save();
         $room->refresh();
 
-        broadcast(new PlayerKicked($playerKicked, $room));
+        broadcast(new PlayerKicked($playerKicked, $room, $kickedMessage));
         $this->chatService->broadcastMessage($room, $message);
     }
 }

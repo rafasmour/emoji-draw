@@ -3,11 +3,12 @@ import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
 import { useRoomLeave } from '@/hooks/use-room-leave';
+import { dashboard } from '@/routes';
 import { Room } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -54,11 +55,22 @@ export default function Game() {
         'GameOver',
         () => router.visit(`/room/${room.id}`),
     );
+    const { listen: listenRoomDestroyed } = useSocket(
+        `room.${room.id}`,
+        'RoomDestroyed',
+        () => {
+            toast.error('Room was destroyed.');
+            setTimeout(() => {
+                window.location.href = dashboard().url;
+            }, 1200);
+        },
+    );
     useEffect(() => {
         listenChangeOwner();
         listenStartRound();
         listenRevealHint();
         listenGameOver();
+        listenRoomDestroyed();
     }, []);
     const users = room.users;
     return (
