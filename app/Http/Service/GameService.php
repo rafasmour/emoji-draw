@@ -4,13 +4,12 @@ namespace App\Http\Service;
 
 use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
-use App\Events\CanvasStroke;
-use App\Events\ChatMessage;
 use App\Events\ClearCanvas;
 use App\Events\GameOver;
 use App\Events\StartGame;
 use App\Events\StartRound;
 use App\Events\StopGame;
+use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\GameServiceInterface;
 use App\Jobs\HintHandler;
 use App\Jobs\RoundHandler;
@@ -23,6 +22,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class GameService implements GameServiceInterface
 {
     use RandomTerm;
+
+    public function __construct(
+        private ChatServiceInterface $chatService,
+    ) {}
 
     public function start(User $user, Room $room): void
     {
@@ -97,7 +100,7 @@ class GameService implements GameServiceInterface
         $room->save();
 
         broadcast(new StopGame($room));
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 
     public function finish(Room $room): void
@@ -142,7 +145,7 @@ class GameService implements GameServiceInterface
         $room->save();
 
         broadcast(new GameOver($room));
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 
     public function changeRound(Room $room): void
@@ -188,7 +191,7 @@ class GameService implements GameServiceInterface
         $room->refresh();
 
         broadcast(new StartRound($room));
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
         broadcast(new ClearCanvas($room));
 
         HintHandler::dispatch($room, $room->status->round)

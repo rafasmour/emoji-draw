@@ -3,21 +3,24 @@
 namespace App\Http\Service;
 
 use App\DataObjects\RoomUser;
-use App\Events\ChatMessage;
 use App\Events\Join;
 use App\Events\Leave;
 use App\Events\OwnerLeave;
 use App\Events\PlayerKicked;
+use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\RoomEntranceServiceInterface;
 use App\Models\Room;
 use App\Models\User;
 use App\UserInRoom;
-use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RoomEntranceService implements RoomEntranceServiceInterface
 {
     use UserInRoom;
+
+    public function __construct(
+        private ChatServiceInterface $chatService,
+    ) {}
 
     public function join(User $user, Room $room): void
     {
@@ -50,7 +53,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $room->refresh();
 
         broadcast(new Join($user, $room))->toOthers();
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 
     public function leave(User $user, Room $room): void
@@ -85,7 +88,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         }
 
         broadcast(new Leave($user, $room))->toOthers();
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 
     public function kick(User $owner, Room $room, string $targetUserId): void
@@ -120,6 +123,6 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $room->refresh();
 
         broadcast(new PlayerKicked($playerKicked, $room));
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 }

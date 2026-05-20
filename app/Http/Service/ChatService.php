@@ -3,6 +3,7 @@
 namespace App\Http\Service;
 
 use App\Events\ChatMessage;
+use App\Events\CorrectGuess;
 use App\Http\Contracts\ChatServiceInterface;
 use App\Models\Room;
 use App\Models\User;
@@ -28,6 +29,16 @@ class ChatService implements ChatServiceInterface
         $room->save();
         $room->refresh();
 
-        broadcast(new ChatMessage($room, $entry));
+        $this->broadcastMessage($room, $entry);
+    }
+
+    public function broadcastMessage(Room $room, array $message): void
+    {
+        broadcast(new ChatMessage($room, $message));
+    }
+
+    public function broadcastCorrectGuess(User $user, Room $room): void
+    {
+        broadcast(new CorrectGuess($user, $room));
     }
 }

@@ -4,8 +4,7 @@ namespace App\Http\Service;
 
 use App\DataObjects\RoomUser;
 use App\Events\CanvasStroke;
-use App\Events\ChatMessage;
-use App\Events\CorrectGuess;
+use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\GameActionServiceInterface;
 use App\Jobs\RoundHandler;
 use App\Models\Room;
@@ -14,6 +13,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class GameActionService implements GameActionServiceInterface
 {
+    public function __construct(
+        private ChatServiceInterface $chatService,
+    ) {}
+
     public function handleStroke(User $user, Room $room, array $data): void
     {
         if ($room->artist !== $user->id) {
@@ -72,7 +75,7 @@ class GameActionService implements GameActionServiceInterface
             $chat[] = $message;
             $room->chat = $chat;
             $room->users = $room->users->map(fn (RoomUser $usr) => $usr->id === $user->id ? $userStats : $usr);
-            broadcast(new ChatMessage($room, $message));
+            $this->chatService->broadcastMessage($room, $message);
         } else {
             $message = [
                 'user_id' => $user->id,
@@ -82,11 +85,11 @@ class GameActionService implements GameActionServiceInterface
             $chat = $room->chat ?? [];
             $chat[] = $message;
             $room->chat = $chat;
-            broadcast(new ChatMessage($room, $message));
+            $this->chatService->broadcastMessage($room, $message);
         }
 
         $room->save();
-        broadcast(new CorrectGuess($user, $room));
+        $this->chatService->broadcastCorrectGuess($user, $room);
 
         if ($correct) {
             $nonArtistUsers = $room->users->filter(fn (RoomUser $u) => $u->id !== $room->artist);

@@ -3,7 +3,7 @@
 namespace App\Http\Service;
 
 use App\Events\ChangeOwner;
-use App\Events\ChatMessage;
+use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\RoomOwnerServiceInterface;
 use App\Models\Room;
 use App\Models\User;
@@ -13,6 +13,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class RoomOwnerService implements RoomOwnerServiceInterface
 {
     use UserInRoom;
+
+    public function __construct(
+        private ChatServiceInterface $chatService,
+    ) {}
 
     public function changeOwner(User $requester, Room $room, string $newOwnerId): void
     {
@@ -39,7 +43,7 @@ class RoomOwnerService implements RoomOwnerServiceInterface
         $room->refresh();
 
         broadcast(new ChangeOwner($room, $newOwner));
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 
     public function assignRandomOwner(Room $room): void
@@ -61,6 +65,6 @@ class RoomOwnerService implements RoomOwnerServiceInterface
         $room->refresh();
 
         broadcast(new ChangeOwner($room, $newOwner));
-        broadcast(new ChatMessage($room, $message));
+        $this->chatService->broadcastMessage($room, $message);
     }
 }
