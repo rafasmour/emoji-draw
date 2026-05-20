@@ -50,6 +50,7 @@ export interface EventPayloads {
     PlayerKicked: {
         event: 'PlayerKicked';
         user_id: string;
+        message: string;
     };
     RoomDestroyed: {
         event: 'RoomDestroyed';

@@ -25,8 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'ensure.authenticated' => \App\Http\Middleware\EnsureAuthenticated::class,
-            'ensure.not.guest'     => \App\Http\Middleware\EnsureNotGuest::class,
-            'guest'                => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            'ensure.not.guest' => \App\Http\Middleware\EnsureNotGuest::class,
+            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         ]);
     })
     ->withBroadcasting(
