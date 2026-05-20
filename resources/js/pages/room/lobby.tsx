@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useSocket } from '@/connection/echo';
 import { useRoomLeave } from '@/hooks/use-room-leave';
 import { destroyRoom, leaveRoom, startGame } from '@/requests/room/room';
+import { dashboard } from '@/routes';
 import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -43,8 +44,10 @@ export default function Lobby() {
         `room.${room.id}`,
         'RoomDestroyed',
         () => {
-            alert('room has been destroyed');
-            window.location.href = '/room';
+            toast.error('Room was destroyed.');
+            setTimeout(() => {
+                window.location.href = dashboard().url;
+            }, 1200);
         },
     );
     useEffect(() => {

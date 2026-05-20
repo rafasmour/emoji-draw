@@ -5,6 +5,7 @@ import { Room } from '@/types';
 import { configureEcho } from '@laravel/echo-react';
 import { CircleX, CrownIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 export interface RoomUsersProps {
     roomId: string;
@@ -43,7 +44,7 @@ export function RoomUsers({
         'PlayerKicked',
         (e) => {
             if (e.user_id === currentUserId) {
-                alert('You have been kicked from the room... ');
+                toast.error(e.message ?? "You were kicked from the room.");
                 window.location.reload();
             }
             setUsers((prev) => prev.filter((user) => user.id !== e.user_id));
