@@ -53,7 +53,7 @@ export default function Game() {
     const { listen: listenGameOver } = useSocket(
         `room.${room.id}`,
         'GameOver',
-        () => router.visit(`/room/${room.id}`),
+        () => router.visit(`/room/${room.id}/results`),
     );
     const { listen: listenRoomDestroyed } = useSocket(
         `room.${room.id}`,

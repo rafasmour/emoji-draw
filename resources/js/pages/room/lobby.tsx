@@ -74,6 +74,7 @@ export default function Lobby() {
                 defaultUsers={users}
                 owner={room.owner}
                 currentUserId={currentUser.id}
+                showScore={false}
                 className={
                     'col-span-7 row-span-5 flex flex-col gap-4 border border-accent'
                 }
