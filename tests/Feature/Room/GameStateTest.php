@@ -4,13 +4,11 @@ namespace Tests\Feature\Room;
 
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
-use App\Http\Controllers\Room\GameStateController;
+use App\Http\Contracts\GameServiceInterface;
 use App\Jobs\RoundHandler;
-use App\Http\Controllers\Room\GameStateController;
 use App\Models\Room;
 use App\Models\Term;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -57,7 +55,7 @@ class GameStateTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new GameStateController)->finish($room);
+        app(GameServiceInterface::class)->finish($room);
 
         $room->refresh();
         $this->assertFalse($room->status->started);
@@ -69,7 +67,7 @@ class GameStateTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new GameStateController)->finish($room);
+        app(GameServiceInterface::class)->finish($room);
 
         $room->refresh();
         $this->assertEquals(0, $room->status->round);
@@ -82,7 +80,7 @@ class GameStateTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new GameStateController)->finish($room);
+        app(GameServiceInterface::class)->finish($room);
 
         $room->refresh();
         $this->assertEquals('', $room->status->term);
@@ -94,15 +92,12 @@ class GameStateTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new GameStateController)->finish($room);
+        app(GameServiceInterface::class)->finish($room);
         $room->refresh();
 
-        $request = Request::create('/room/start', 'POST');
-        $request->setUserResolver(fn () => $owner);
-
-        $response = (new GameStateController)->start($request, $room);
-
-        $this->assertNotEquals(403, $response->getStatusCode());
+        $this->actingAs($owner)
+            ->postJson(route('room.start', $room))
+            ->assertOk();
     }
 
     public function test_start_blocked_while_game_in_progress(): void
@@ -111,12 +106,9 @@ class GameStateTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        $request = Request::create('/room/start', 'POST');
-        $request->setUserResolver(fn () => $owner);
-
-        $response = (new GameStateController)->start($request, $room);
-
-        $this->assertEquals(403, $response->getStatusCode());
+        $this->actingAs($owner)
+            ->postJson(route('room.start', $room))
+            ->assertStatus(403);
     }
 
     public function test_start_returns_json_redirect_when_expects_json(): void
@@ -141,7 +133,7 @@ class GameStateTest extends TestCase
         $room = $this->makeRoom($owner, $other, new RoomStatus(started: true, round: 2, time: '2099-01-01 00:00:00', term: 'cat', guesses: 0));
 
         $job = new RoundHandler($room, forRound: 1);
-        $job->handle();
+        $job->handle(app(GameServiceInterface::class));
 
         $room->refresh();
         $this->assertEquals(2, $room->status->round);
@@ -168,10 +160,9 @@ class GameStateTest extends TestCase
             'status' => new RoomStatus(started: true, round: 1, time: '2099-01-01 00:00:00', term: 'apple', guesses: 0),
         ]);
 
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new \App\Http\Controllers\Room\GameActionController)->guess($request, $room);
+        $this->actingAs($other)
+            ->postJson(route('room.guess', $room), ['guess' => 'apple'])
+            ->assertSuccessful();
 
         Queue::assertPushed(RoundHandler::class);
     }

@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Room;
 
-use App\Events\ChatMessage;
+use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
-use HTMLPurifier;
-use HTMLPurifier_Config;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
+    public function __construct(
+        private ChatServiceInterface $chatService,
+    ) {}
+
     public function getMessages(Request $request, Room $room)
     {
         return $room->chat;
@@ -25,20 +27,7 @@ class ChatController extends Controller
         if ($room->status->started) {
             return redirect()->route('room.guess', $room);
         }
-        $config = HTMLPurifier_Config::createDefault();
-        $purifier = new HTMLPurifier($config);
-        $message = $purifier->purify($validated['message']);
-        $roomChat = $room->chat ?? [];
-        $user = $request->user();
-        $message = [
-            'user_id' => $user->getKey(),
-            'user' => $user->name,
-            'message' => $message,
-        ];
-        $roomChat[] = $message;
-        $room->chat = $roomChat;
-        $room->save();
-        $room->refresh();
-        broadcast(new ChatMessage($room, $message));
+
+        $this->chatService->sendMessage($request->user(), $room, $validated['message']);
     }
 }

@@ -2,26 +2,30 @@
 
 namespace App\Http\Controllers\Room;
 
-use App\Events\RoomDestroyed;
 use App\Http\Controllers\Controller;
+use App\Http\Service\RoomService;
 use App\Models\Room;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DestroyRoomController extends Controller
 {
+    public function __construct(
+        private RoomService $roomService,
+    ) {}
+
     public function destroy(Request $request, Room $room)
     {
-        if (count($room->users) === 0 || $request->user()->id === $room->owner) {
-            broadcast(new RoomDestroyed($room));
-            $room->delete();
-
-            if ($request->expectsJson()) {
-                return response()->json(['redirect' => route('room.rooms')]);
-            }
-
-            return response()->redirectToRoute('room.rooms');
+        try {
+            $this->roomService->destroy($request->user(), $room);
+        } catch (HttpException $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         }
 
-        return response()->json(['message' => 'unauthorized'], 403);
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route('room.rooms')]);
+        }
+
+        return response()->redirectToRoute('room.rooms');
     }
 }

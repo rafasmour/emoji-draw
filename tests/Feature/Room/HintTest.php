@@ -6,7 +6,6 @@ use App\Concerns\BuildsHint;
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
 use App\Events\RevealHint;
-use App\Http\Controllers\Room\RoundChangerController;
 use App\Jobs\HintHandler;
 use App\Models\Room;
 use App\Models\Term;
@@ -179,7 +178,7 @@ class HintTest extends TestCase
             'status' => new RoomStatus(started: true, round: 0, time: '2099-01-01 00:00:00', term: '', guesses: 0),
         ]);
 
-        (new RoundChangerController)->change($room);
+        app(\App\Http\Contracts\GameServiceInterface::class)->changeRound($room);
 
         Queue::assertPushed(HintHandler::class);
     }

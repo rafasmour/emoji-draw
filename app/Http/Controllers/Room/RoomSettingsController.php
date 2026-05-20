@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers\Room;
 
-use App\Events\RoomPublicChanged;
+use App\Http\Contracts\RoomSettingsServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RoomSettingsController extends Controller
 {
+    public function __construct(
+        private RoomSettingsServiceInterface $roomSettingsService,
+    ) {}
+
     public function settings(Request $request, Room $room)
     {
-
         return $room->settings;
     }
 
     public function updateSettings(Request $request, Room $room)
     {
-        if ($request->user()->getKey() === $room->owner) {
-            return response()->json(['message' => 'unauthorized'], 403);
-        }
         $validated = $request->validate([
             'cap' => ['integer', 'min:1', 'max:50'],
             'public' => ['boolean'],
@@ -28,23 +29,13 @@ class RoomSettingsController extends Controller
             'categories' => ['array'],
             'rounds' => ['integer', 'min:1', 'max:10'],
         ]);
-        $currentSettings = $room->settings;
-        $roomPublicChanged = $validated['public'] !== $currentSettings->public;
-        $room->settings = [
-            ...(array) $currentSettings,
-            ...$validated,
-        ];
-        $room->chat[] = [
-            'user_id' => $request->user()->id,
-            'user' => $request->user()->name,
-            'message' => 'updated settings',
-        ];
-        $room->save();
-        $room->refresh();
-        if ($roomPublicChanged) {
-            broadcast(new RoomPublicChanged($room->settings->public, $room));
+
+        try {
+            $settings = $this->roomSettingsService->update($request->user(), $room, $validated);
+        } catch (HttpException $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         }
 
-        return response()->json(['message' => 'settings updated', 'settings' => $room->settings]);
+        return response()->json(['message' => 'settings updated', 'settings' => $settings]);
     }
 }

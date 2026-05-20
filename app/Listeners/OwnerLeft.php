@@ -3,24 +3,16 @@
 namespace App\Listeners;
 
 use App\Events\OwnerLeave;
-use App\Http\Controllers\Room\RoomOwnerController;
+use App\Http\Contracts\RoomOwnerServiceInterface;
 
 class OwnerLeft
 {
-    /**
-     * Create the event listener.
-     */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        private RoomOwnerServiceInterface $roomOwnerService,
+    ) {}
 
-    /**
-     * Handle the event.
-     */
     public function handle(OwnerLeave $event): void
     {
-        $room = $event->getRoom();
-        RoomOwnerController::randomOwner($room);
+        $this->roomOwnerService->assignRandomOwner($event->getRoom());
     }
 }
