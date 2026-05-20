@@ -5,7 +5,7 @@ namespace Tests\Feature\Room;
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
-use App\Http\Controllers\Room\RoundChangerController;
+use App\Http\Contracts\GameServiceInterface;
 use App\Models\Room;
 use App\Models\Term;
 use App\Models\User;
@@ -54,7 +54,7 @@ class RoundChangerTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new RoundChangerController)->change($room);
+        app(GameServiceInterface::class)->changeRound($room);
 
         $room->refresh();
         $room->users->each(fn (RoomUser $user) => $this->assertFalse($user->guessed));
@@ -66,7 +66,7 @@ class RoundChangerTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new RoundChangerController)->change($room);
+        app(GameServiceInterface::class)->changeRound($room);
 
         $room->refresh();
         $this->assertEquals(2, $room->status->round);
@@ -78,7 +78,7 @@ class RoundChangerTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new RoundChangerController)->change($room);
+        app(GameServiceInterface::class)->changeRound($room);
 
         $room->refresh();
         $this->assertEmpty($room->canvas);
@@ -91,7 +91,7 @@ class RoundChangerTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new RoundChangerController)->change($room);
+        app(GameServiceInterface::class)->changeRound($room);
 
         $room->refresh();
         $this->assertEquals($other->id, $room->artist);
@@ -105,7 +105,7 @@ class RoundChangerTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new RoundChangerController)->change($room);
+        app(GameServiceInterface::class)->changeRound($room);
 
         $room->refresh();
         $this->assertEquals($term->value, $room->status->term);
@@ -118,7 +118,7 @@ class RoundChangerTest extends TestCase
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
 
-        (new RoundChangerController)->change($room);
+        app(GameServiceInterface::class)->changeRound($room);
 
         $room->refresh();
         $this->assertIsString($room->status->time);
