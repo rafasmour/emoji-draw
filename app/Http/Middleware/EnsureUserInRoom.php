@@ -2,14 +2,16 @@
 
 namespace App\Http\Middleware;
 
-use App\UserInRoom;
+use App\Contracts\RoomServiceInterface;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserInRoom
 {
-    use UserInRoom;
+    public function __construct(
+        private RoomServiceInterface $roomService,
+    ) {}
 
     /**
      * Handle an incoming request.
@@ -19,7 +21,7 @@ class EnsureUserInRoom
     public function handle(Request $request, Closure $next): Response
     {
         $room = $request->route('room');
-        if (! $this->userInRoom($request->user()->getKey(), $room)) {
+        if (! $this->roomService->userInRoom($request->user()->getKey(), $room)) {
             return redirect()->route('room.rooms');
         }
 
