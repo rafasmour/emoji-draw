@@ -50,6 +50,17 @@ class RoomService
         return $room;
     }
 
+    public function getPublicRooms(): array
+    {
+        return Room::all()->where('settings.public', true)->map(function (Room $room) {
+            return [
+                'id' => $room->getKey(),
+                'name' => $room->name,
+                'users' => count($room->users).'/'.$room->settings->cap,
+            ];
+        })->values()->toArray();
+    }
+
     public function destroy(User $user, Room $room): void
     {
         if (count($room->users) !== 0 && $user->id !== $room->owner) {
