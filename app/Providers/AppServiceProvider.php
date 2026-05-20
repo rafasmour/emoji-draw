@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\RoomServiceInterface;
+use App\Contracts\TermServiceInterface;
+use App\Contracts\UserServiceInterface;
+use App\Http\Service\RoomService;
+use App\Http\Service\TermService;
+use App\Http\Service\UserService;
 use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\GameActionServiceInterface;
 use App\Http\Contracts\GameServiceInterface;
@@ -32,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChatServiceInterface::class, ChatService::class);
         $this->app->bind(RoomSettingsServiceInterface::class, RoomSettingsService::class);
         $this->app->bind(GameActionServiceInterface::class, GameActionService::class);
+        $this->app->bind(RoomServiceInterface::class, RoomService::class);
+        $this->app->bind(UserServiceInterface::class, UserService::class);
+        $this->app->bind(TermServiceInterface::class, TermService::class);
     }
 
     /**

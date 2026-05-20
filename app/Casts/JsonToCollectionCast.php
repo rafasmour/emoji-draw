@@ -19,6 +19,10 @@ class JsonToCollectionCast implements CastsAttributes
 
     public function set(Model $model, string $key, mixed $value, array $attributes): array
     {
-        return [$key => $value instanceof Collection ? $value->toArray() : $value];
+        if ($value instanceof Collection) {
+            $value = $value->map(fn ($item) => is_object($item) ? (array) $item : $item)->all();
+        }
+
+        return [$key => $value];
     }
 }
