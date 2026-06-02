@@ -171,4 +171,61 @@ class RoomEntranceTest extends TestCase
             ->post(route('room.join'), ['room_id' => $room->id])
             ->assertRedirect(route('room.lobby', $room));
     }
+
+    public function test_game_finishes_early_if_only_one_player_remains_after_kicking(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, [$other]);
+
+        // Simulate game started
+        $room->status = new RoomStatus(started: true, round: 1, time: '60', term: 'apple', guesses: 0);
+        $room->save();
+
+        $this->actingAs($owner)
+            ->post(route('room.kick', $room), ['user_id' => $other->id]);
+
+        $room->refresh();
+        $this->assertFalse($room->status->started);
+        $this->assertEquals(0, $room->status->round);
+    }
+
+    public function test_game_finishes_early_if_only_one_player_remains_after_leaving(): void
+    {
+        $owner = User::factory()->create();
+        $other1 = User::factory()->create();
+        $other2 = User::factory()->create();
+        $other3 = User::factory()->create();
+        $room = $this->makeRoom($owner, [$other1, $other2, $other3]);
+
+        // Simulate game started
+        $room->status = new RoomStatus(started: true, round: 1, time: '60', term: 'apple', guesses: 0);
+        $room->save();
+
+        // One player leaves, 3 left.
+        $this->actingAs($other1)
+            ->post(route('room.leave', $room));
+
+        $room->refresh();
+        $this->assertTrue($room->status->started);
+        $this->assertCount(3, $room->users);
+
+        // Another player leaves, 2 left.
+        $this->actingAs($other2)
+            ->post(route('room.leave', $room));
+
+        $room->refresh();
+        $this->assertTrue($room->status->started);
+        $this->assertCount(2, $room->users);
+
+        // Another player leaves, 1 left.
+        $this->actingAs($other3)
+            ->post(route('room.leave', $room));
+
+        $this->assertNotNull($room->fresh());
+        $room->refresh();
+        $this->assertFalse($room->status->started);
+        $this->assertEquals(0, $room->status->round);
+        $this->assertCount(1, $room->users);
+    }
 }
