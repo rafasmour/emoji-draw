@@ -10,6 +10,7 @@ use App\Http\Controllers\Room\GetRoomsController;
 use App\Http\Controllers\Room\RoomEntranceController;
 use App\Http\Controllers\Room\RoomLobbyController;
 use App\Http\Controllers\Room\RoomOwnerController;
+use App\Http\Controllers\Room\RoomResultsController;
 use App\Http\Controllers\Room\RoomSettingsController;
 use App\Http\Middleware\EnsureUserInRoom;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,7 @@ Route::prefix('room')->middleware('ensure.authenticated')->group(function () {
         Route::get('/', [RoomLobbyController::class, 'index'])->name('room.lobby');
         Route::delete('/', [DestroyRoomController::class, 'destroy'])->name('room.destroy');
         Route::get('game', [GameViewController::class, 'index'])->name('room.game');
+        Route::get('results', [RoomResultsController::class, 'index'])->name('room.results');
         Route::post('leave', [RoomEntranceController::class, 'leave'])->name('room.leave');
         Route::get('messages', [ChatController::class, 'getMessages'])->name('room.messages');
         Route::post('messages', [ChatController::class, 'sendMessage'])->name('room.send.message');

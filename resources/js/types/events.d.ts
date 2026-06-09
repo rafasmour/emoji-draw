@@ -28,12 +28,19 @@ export interface EventPayloads {
     };
     CorrectGuess: {
         event: 'CorrectGuess';
+        user_id: string;
+        artist_id: string;
+        guesser_score: number;
+        artist_score: number;
+        is_first_guess: boolean;
+        users: Array<{ id: string; score: number }>;
     };
     FinishGame: {
         message: string;
     };
     GameOver: {
         event: 'GameOver';
+        users: Array<{ id: string; name: string; score: number }>;
     };
     Join: {
         event: 'Join';

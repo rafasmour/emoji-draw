@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\DataObjects\RoomUser;
 use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -14,14 +15,20 @@ class GameOver implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
     public string $event = 'GameOver';
+
+    /** @var array<int, array{id: string, name: string, score: int}> */
+    public array $users;
 
     public function __construct(
         private Room $room,
-    ) {}
+    ) {
+        $this->users = $room->users
+            ->sortByDesc('score')
+            ->map(fn (RoomUser $u) => ['id' => $u->id, 'name' => $u->name, 'score' => $u->score])
+            ->values()
+            ->all();
+    }
 
     /**
      * Get the channels the event should broadcast on.
