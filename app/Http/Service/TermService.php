@@ -2,7 +2,6 @@
 
 namespace App\Http\Service;
 
-class TermService
-{
-    public function __construct() {}
-}
+use App\Contracts\TermServiceInterface;
+
+class TermService implements TermServiceInterface {}

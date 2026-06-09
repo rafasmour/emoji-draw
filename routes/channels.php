@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\EnsureUserInRoom;
+use App\Contracts\RoomServiceInterface;
 use App\Models\Room;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -12,7 +12,6 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 Broadcast::channel('room.{roomId}', function ($user, $roomId) {
     $room = Room::findOrFail($roomId);
-    $userTrait = new EnsureUserInRoom;
 
-    return $userTrait->userInRoom($user->id, $room);
+    return app(RoomServiceInterface::class)->userInRoom($user->id, $room);
 });
