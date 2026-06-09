@@ -41,6 +41,7 @@ export function useRoomLeave(roomId: string): void {
             });
         };
 
+        const handleBeforeUnload = () => sendLeave(true);
         const handlePageHide = () => sendLeave(true);
 
         const removeInertiaListener = router.on('before', (event) => {
@@ -50,9 +51,11 @@ export function useRoomLeave(roomId: string): void {
             }
         });
 
+        window.addEventListener('beforeunload', handleBeforeUnload);
         window.addEventListener('pagehide', handlePageHide);
 
         return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
             window.removeEventListener('pagehide', handlePageHide);
             removeInertiaListener();
         };

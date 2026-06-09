@@ -44,28 +44,18 @@ class GameActionService implements GameActionServiceInterface
             throw new HttpException(403, 'Already guessed.');
         }
 
+        // Validate guess parameter
+        if (! is_string($guess) || empty(trim($guess))) {
+            throw new HttpException(400, 'Invalid guess parameter.');
+        }
+
         $correct = $guess === $room->status->term;
 
-        $userStats = new RoomUser(
-            id: $userStats->id,
-            name: $userStats->name,
-            score: $userStats->score,
-            guesses: $userStats->guesses + 1,
-            correct_guesses: $userStats->correct_guesses,
-            guessed: $userStats->guessed,
-            room_token: $userStats->room_token,
-        );
-
+        // Update user stats in the database directly
+        $userStats->guesses += 1;
+        $userStats->guessed = true;
         if ($correct) {
-            $userStats = new RoomUser(
-                id: $userStats->id,
-                name: $userStats->name,
-                score: $userStats->score,
-                guesses: $userStats->guesses,
-                correct_guesses: $userStats->correct_guesses + 1,
-                guessed: true,
-                room_token: $userStats->room_token,
-            );
+            $userStats->correct_guesses += 1;
             $message = [
                 'user_id' => $user->id,
                 'user' => $user->name,

@@ -5,8 +5,12 @@ namespace Tests\Feature\Room;
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
+use App\Http\Contracts\ChatServiceInterface;
+use App\Http\Contracts\RoomEntranceServiceInterface;
+use App\Http\Service\RoomEntranceService;
 use App\Models\Room;
 use App\Models\User;
+use Mockery;
 use Tests\TestCase;
 
 class RoomEntranceTest extends TestCase
@@ -170,5 +174,71 @@ class RoomEntranceTest extends TestCase
         $this->actingAs($joiner)
             ->post(route('room.join'), ['room_id' => $room->id])
             ->assertRedirect(route('room.lobby', $room));
+    }
+
+    public function test_user_is_force_left_from_old_room_when_joining_new_room(): void
+    {
+        $owner1 = User::factory()->create();
+        $owner2 = User::factory()->create();
+        $user = User::factory()->create();
+        $room1 = $this->makeRoom($owner1, [$user]);
+        $room2 = $this->makeRoom($owner2);
+
+        $this->assertCount(2, $room1->users);
+
+        $this->actingAs($user)
+            ->post(route('room.join'), ['room_id' => $room2->id])
+            ->assertRedirect(route('room.lobby', $room2));
+
+        $room1->refresh();
+        $room2->refresh();
+
+        $this->assertCount(1, $room1->users);
+        $this->assertEquals($owner1->id, $room1->users->first()->id);
+        $this->assertCount(2, $room2->users);
+        $this->assertEquals($user->id, $room2->users->last()->id);
+    }
+
+    public function test_user_force_left_from_old_room_owner_leave_triggers_owner_transfer(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $newOwner = User::factory()->create();
+        $room1 = $this->makeRoom($user, [$other]);
+        $room2 = $this->makeRoom($newOwner);
+
+        $this->actingAs($user)
+            ->post(route('room.join'), ['room_id' => $room2->id]);
+
+        $room1->refresh();
+        $this->assertNotEquals($user->id, $room1->owner);
+        $this->assertContains($room1->owner, [$other->id]);
+    }
+
+    public function test_user_can_join_even_if_force_leave_other_rooms_fails(): void
+    {
+        $owner1 = User::factory()->create();
+        $owner2 = User::factory()->create();
+        $user = User::factory()->create();
+        $room1 = $this->makeRoom($owner1, [$user]);
+        $room2 = $this->makeRoom($owner2);
+
+        $chatService = Mockery::mock(ChatServiceInterface::class);
+        $chatService->shouldReceive('broadcastMessage')->once();
+
+        $service = Mockery::mock(RoomEntranceService::class, [$chatService])->makePartial();
+        $service->shouldReceive('leave')->andThrow(new \RuntimeException('temporary leave failure'));
+        $this->app->instance(RoomEntranceServiceInterface::class, $service);
+
+        $this->actingAs($user)
+            ->post(route('room.join'), ['room_id' => $room2->id])
+            ->assertRedirect(route('room.lobby', $room2));
+
+        $room1->refresh();
+        $room2->refresh();
+
+        $this->assertCount(2, $room1->users);
+        $this->assertCount(2, $room2->users);
+        $this->assertEquals($user->id, $room2->users->last()->id);
     }
 }
