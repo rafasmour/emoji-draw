@@ -9,6 +9,14 @@ const api = axios.create({
     headers: { Accept: 'application/json' },
 });
 
+const getCsrfToken = (): string =>
+    decodeURIComponent(
+        document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('XSRF-TOKEN='))
+            ?.split('=')[1] ?? '',
+    );
+
 const navigate = (url: string) => router.visit(url);
 
 const handleError = (error: unknown) => {
@@ -19,10 +27,24 @@ const handleError = (error: unknown) => {
     }
 };
 
-export const leaveRoom = async (roomId: string) => {
+export const leaveRoom = async (
+    roomId: string,
+    options: { shouldRedirect?: boolean; useBeacon?: boolean } = {},
+) => {
+    const { shouldRedirect = true, useBeacon = false } = options;
     try {
+        if (useBeacon) {
+            const url = `/room/${roomId}/leave`;
+            const token = getCsrfToken();
+            const data = new FormData();
+            data.append('_token', token);
+            navigator.sendBeacon(url, data);
+            return;
+        }
         const res = await api.post(`/room/${roomId}/leave`);
-        navigate(res.data.redirect);
+        if (shouldRedirect) {
+            navigate(res.data.redirect);
+        }
     } catch (error) {
         handleError(error);
     }

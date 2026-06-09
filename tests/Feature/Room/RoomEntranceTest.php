@@ -228,4 +228,21 @@ class RoomEntranceTest extends TestCase
         $this->assertEquals(0, $room->status->round);
         $this->assertCount(1, $room->users);
     }
+
+    public function test_user_is_kicked_from_other_rooms_when_joining_new_room(): void
+    {
+        $user = User::factory()->create();
+        $owner1 = User::factory()->create();
+        $owner2 = User::factory()->create();
+
+        $room1 = $this->makeRoom($owner1, [$user]);
+        $room2 = $this->makeRoom($owner2);
+
+        $this->actingAs($user)
+            ->post(route('room.join'), ['room_id' => $room2->id])
+            ->assertRedirect(route('room.lobby', $room2));
+
+        $this->assertFalse($room1->fresh()->users->contains('id', $user->id));
+        $this->assertTrue($room2->fresh()->users->contains('id', $user->id));
+    }
 }

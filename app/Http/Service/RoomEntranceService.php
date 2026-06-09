@@ -35,6 +35,8 @@ class RoomEntranceService implements RoomEntranceServiceInterface
             throw new HttpException(422, 'Room is full.');
         }
 
+        $this->kickFromOtherRooms($user, $room);
+
         $room->users = $room->users->push(new RoomUser(
             id: $user->id,
             name: $user->name,
@@ -57,6 +59,14 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
         broadcast(new Join($user, $room))->toOthers();
         $this->chatService->broadcastMessage($room, $message);
+    }
+
+    private function kickFromOtherRooms(User $user, Room $room): void
+    {
+        $otherRooms = Room::where('users.id', $user->id)->where('_id', '!=', $room->id)->get();
+        foreach ($otherRooms as $otherRoom) {
+            $this->leave($user, $otherRoom);
+        }
     }
 
     public function leave(User $user, Room $room): void
