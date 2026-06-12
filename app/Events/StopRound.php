@@ -31,7 +31,7 @@ class StopRound implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel("room.{$this->room->id}"),
         ];
     }
 }

@@ -13,7 +13,7 @@ class RoomSettingsService implements RoomSettingsServiceInterface
 {
     public function update(User $user, Room $room, array $settings): RoomSettings
     {
-        if ($user->getKey() === $room->owner) {
+        if ($user->getKey() !== $room->owner) {
             throw new HttpException(403, 'Unauthorized.');
         }
 

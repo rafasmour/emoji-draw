@@ -39,7 +39,7 @@ class RegisteredUserController extends Controller
             ],
         ]);
         $user->save();
-        dump($user);
+
         event(new Registered($user));
 
         Auth::login($user);

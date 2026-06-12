@@ -4,6 +4,7 @@ namespace App\Contracts;
 
 use App\Models\Room;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface RoomServiceInterface
 {
@@ -11,9 +12,9 @@ interface RoomServiceInterface
 
     public function userInRoom(string $userId, Room $room): bool;
 
-    public function addUser(Room $room, User $user): void;
+    public function getPublicRooms(int $perPage = 10): LengthAwarePaginator;
 
-    public function removeUser(Room $room, User $user): string;
+    public function create(User $owner, string $name): Room;
 
-    public function kickUser(Room $room, string $targetUserId, User $owner): void;
+    public function destroy(User $user, Room $room): void;
 }

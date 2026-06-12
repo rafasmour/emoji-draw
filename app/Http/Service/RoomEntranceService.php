@@ -2,6 +2,7 @@
 
 namespace App\Http\Service;
 
+use App\Contracts\RoomServiceInterface;
 use App\DataObjects\RoomUser;
 use App\Events\Join;
 use App\Events\Leave;
@@ -25,8 +26,18 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         private GameServiceInterface $gameService,
     ) {}
 
-    public function join(User $user, Room $room): void
+    public function join(User $user, ?Room $room): void
     {
+        if ($room === null) {
+            throw new HttpException(404, 'Room not found.');
+        }
+
+        $currentRoom = $this->roomService->findRoomWithUser($user->getKey());
+
+        if ($currentRoom !== null && $currentRoom->getKey() === $room->getKey()) {
+            return;
+        }
+
         if (in_array($user->id, $room->kicked_users ?? [], true)) {
             throw new HttpException(403, "You can't enter this room. You were kicked by the owner and can't rejoin.");
         }
@@ -55,7 +66,6 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
-        $room->refresh();
 
         broadcast(new Join($user, $room))->toOthers();
         $this->chatService->broadcastMessage($room, $message);
@@ -106,10 +116,9 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
-        $room->refresh();
 
         if ($user->getKey() === $room->owner) {
-            event(new OwnerLeave($user, $room, $message));
+            event(new OwnerLeave($user, $room));
         }
 
         broadcast(new Leave($user, $room))->toOthers();
@@ -132,7 +141,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
             throw new HttpException(404, 'User not found in room.');
         }
 
-        $playerKicked = User::find($targetUserId);
+        $playerKicked = User::where('id', $targetUserId)->first();
         $room->users = $newUsers;
 
         if ($newUsers->count() === 1 && $room->status->started) {
@@ -151,7 +160,6 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $roomChat[] = $message;
         $room->chat = $roomChat;
         $room->save();
-        $room->refresh();
 
         broadcast(new PlayerKicked($playerKicked, $room, $kickedMessage));
         $this->chatService->broadcastMessage($room, $message);
