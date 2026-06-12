@@ -1,12 +1,19 @@
 import { CountdownClock } from '@/components/components/countdown-clock';
-import { Button } from '@/components/ui/button';
+import { RoomCanvasArtistTools } from '@/components/room/room-canvas-artist-tools';
+import { RoomChatMessageForm } from '@/components/room/room-chat-message-form';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { useSocket } from '@/connection/echo';
-import { sendStroke } from '@/requests/room/room';
+import { cn } from '@/lib/utils';
+import { sendGuess, sendStroke } from '@/requests/room/room';
 import { Room } from '@/types';
-import data from '@emoji-mart/data';
-import EmojiPicker from '@emoji-mart/react';
 import { configureEcho } from '@laravel/echo-react';
-import { useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -14,9 +21,6 @@ configureEcho({
 });
 
 const CANVAS_LOGICAL_SIZE = 3000;
-const MIN_CANVAS_SIZE = 260;
-const MAX_CANVAS_SIZE = 900;
-const CANVAS_HEIGHT_RATIO = 0.68;
 
 interface RoomCanvasProps {
     defaultStrokes: Room['canvas'];
@@ -40,27 +44,23 @@ export function RoomCanvas({
     roundDuration,
 }: RoomCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const canvasWrapperRef = useRef<HTMLDivElement>(null);
-    const [canvasDisplaySize, setCanvasDisplaySize] = useState<number>(
-        MIN_CANVAS_SIZE,
-    );
     const [size, setSize] = useState<number>(100);
     const [emoji, setEmoji] = useState<string>('💩');
-    const [select, setSelect] = useState<boolean>(false);
+    const [guessMessage, setGuessMessage] = useState<string>('');
 
-    const updateCanvasScale = () => {
-        const wrapper = canvasWrapperRef.current;
-        if (!wrapper) return;
+    const canvasStroke = (stroke: Room['canvas'][number]) => {
+        if (!stroke) return;
 
-        const widthLimit = Math.floor(wrapper.getBoundingClientRect().width);
-        const heightLimit = Math.floor(window.innerHeight * CANVAS_HEIGHT_RATIO);
+        const ctx = canvasRef.current?.getContext('2d');
+        if (!ctx) return;
 
-        const nextSize = Math.max(
-            MIN_CANVAS_SIZE,
-            Math.min(widthLimit, heightLimit, MAX_CANVAS_SIZE),
-        );
+        ctx.font = `${isArtist ? size : stroke.size}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText(stroke.emoji, stroke.x, stroke.y);
 
-        setCanvasDisplaySize((prev) => (prev === nextSize ? prev : nextSize));
+        if (isArtist) {
+            sendStroke(roomId, stroke);
+        }
     };
 
     const { listen: listenStroke } = useSocket(
@@ -72,14 +72,18 @@ export function RoomCanvas({
         },
     );
 
-    const { listen: listenClear } = useSocket(`room.${roomId}`, 'ClearCanvas', () => {
-        if (canvasRef.current) {
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-    });
+    const { listen: listenClear } = useSocket(
+        `room.${roomId}`,
+        'ClearCanvas',
+        () => {
+            if (canvasRef.current) {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        },
+    );
 
     useEffect(() => {
         listenStroke();
@@ -91,6 +95,7 @@ export function RoomCanvas({
             const ctx = canvasRef.current.getContext('2d');
             if (!ctx) return;
             ctx.clearRect(0, 0, CANVAS_LOGICAL_SIZE, CANVAS_LOGICAL_SIZE);
+
             for (const stroke of defaultStrokes) {
                 ctx.font = `${stroke.size}px Arial`;
                 ctx.textAlign = 'center';
@@ -99,112 +104,104 @@ export function RoomCanvas({
         }
     }, [defaultStrokes]);
 
-    useEffect(() => {
-        updateCanvasScale();
+    const submitGuess = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
 
-        const observer = new ResizeObserver(updateCanvasScale);
-        if (canvasWrapperRef.current) {
-            observer.observe(canvasWrapperRef.current);
+        const trimmedGuess = guessMessage.trim();
+
+        if (trimmedGuess.length === 0) {
+            return;
         }
 
-        window.addEventListener('resize', updateCanvasScale);
-
-        return () => {
-            observer.disconnect();
-            window.removeEventListener('resize', updateCanvasScale);
-        };
-    }, []);
-
-    const canvasStroke = (stroke: Room['canvas'][number]) => {
-        if (!stroke) return;
-        const ctx = canvasRef.current?.getContext('2d');
-        if (!ctx) return;
-        ctx.font = `${isArtist ? size : stroke.size}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.fillText(stroke.emoji, stroke.x, stroke.y);
-        if (isArtist) sendStroke(roomId, stroke);
+        sendGuess(roomId, trimmedGuess);
+        setGuessMessage('');
     };
 
     return (
-        <div
-            className={
-                className +
-                'flex flex-col items-center justify-center gap-5 border border-accent p-6 md:p-10'
-            }
+        <Card
+            className={cn(
+                'h-screen max-h-screen gap-0 overflow-hidden p-0 sm:h-auto sm:max-h-none xl:h-full xl:max-h-full',
+                className,
+            )}
         >
-            <div
-                className={
-                    'flex w-full flex-row flex-wrap items-center justify-center gap-4'
-                }
-            >
-                {isArtist ? (
-                    <>
-                        <span className="text-lg font-semibold tracking-wide">
-                            {term}
-                        </span>
-                        <div>
-                            <Button
-                                className={'py-10 text-4xl'}
-                                onClick={() => setSelect(!select)}
-                            >
-                                {emoji}
-                            </Button>
+            <CardHeader className="shrink-0 items-center gap-4 border-b border-border px-5 py-5 text-center sm:px-6 lg:items-stretch lg:text-left">
+                <div className="flex flex-col items-center gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-1">
+                        <CardTitle className="text-xl">
+                            Round in progress
+                        </CardTitle>
+                        <CardDescription>
+                            {isArtist
+                                ? 'You are drawing. Pick an emoji and place it on the board.'
+                                : 'Watch the board and submit your guess in chat.'}
+                        </CardDescription>
+                    </div>
+                    <div className="flex items-center justify-center gap-3 self-center rounded-lg border border-border bg-muted/40 px-3 py-2 lg:self-start">
+                        <div className="text-center lg:text-right">
+                            <div className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                                Time left
+                            </div>
+                            <div className="text-sm font-medium">
+                                Current round
+                            </div>
                         </div>
-                        <div
-                            className={`absolute z-20 ${select ? 'block' : 'hidden'}`}
-                        >
-                            <EmojiPicker
-                                data={data}
-                                type={'native'}
-                                onEmojiSelect={(selected: { native: string }) =>
-                                    setEmoji(selected.native)
-                                }
-                                onClickOutside={(event: MouseEvent) => {
-                                    if (!select) return;
-                                    setSelect(false);
-                                    event.stopPropagation();
-                                }}
+                        <CountdownClock
+                            seconds={timeLeft}
+                            defaultTime={roundDuration}
+                            roomId={roomId}
+                        />
+                    </div>
+                </div>
+                <div
+                    className={`${isArtist ? 'lg:grid-cols-2' : ''}  grid w-full gap-4 text-center xl:text-left`}
+                >
+                    <div
+                        className={
+                            `rounded-lg ${!isArtist ? 'text-center' : ''} border border-border bg-muted/30 p-4`
+                        }
+                    >
+                        <div className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                            {isArtist ? 'Prompt' : 'Hint'}
+                        </div>
+                        <div className="mt-2 font-mono text-lg tracking-[0.25em] break-words sm:text-xl">
+                            {isArtist
+                                ? term
+                                : hint ||
+                                  term
+                                      .replace(/[^ ]/g, '_')
+                                      .split('')
+                                      .join(' ')}
+                        </div>
+                    </div>
+                    {isArtist ? (
+                        <RoomCanvasArtistTools
+                            emoji={emoji}
+                            size={size}
+                            onEmojiChange={setEmoji}
+                            onSizeChange={setSize}
+                        />
+                    ) : (
+                        <div className="rounded-lg border border-dashed border-border bg-background/70 p-4 lg:hidden">
+                            <div className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                                Your guess
+                            </div>
+                            <RoomChatMessageForm
+                                value={guessMessage}
+                                onChange={setGuessMessage}
+                                onSubmit={submitGuess}
+                                placeholder="Type your guess"
+                                className="mt-3"
+                                inputClassName="bg-background"
                             />
                         </div>
-                        <input
-                            type="range"
-                            min={50}
-                            max={1000}
-                            step={1}
-                            value={size}
-                            onChange={(e) => setSize(Number(e.target.value))}
-                            className="rounded-md border border-accent p-2"
-                        />
-                    </>
-                ) : (
-                    <span className="font-mono text-xl tracking-widest">
-                        {hint || term.replace(/[^ ]/g, '_').split('').join(' ')}
-                    </span>
-                )}
-                <div
-                    className={
-                        'relative flex flex-row items-center justify-center'
-                    }
-                >
-                    <CountdownClock
-                        seconds={timeLeft}
-                        defaultTime={roundDuration}
-                        roomId={roomId}
-                    />
+                    )}
                 </div>
-            </div>
-            <div
-                ref={canvasWrapperRef}
-                className="flex w-full items-center justify-center"
-            >
+            </CardHeader>
+            <CardContent className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted/20 p-3 sm:p-5">
                 <canvas
                     width={CANVAS_LOGICAL_SIZE}
                     height={CANVAS_LOGICAL_SIZE}
-                    style={{
-                        width: `${canvasDisplaySize}px`,
-                        height: `${canvasDisplaySize}px`,
-                    }}
-                    className="max-w-full rounded-md bg-gray-300"
+                    className="aspect-square h-auto max-h-full w-full max-w-3xl touch-manipulation rounded-lg border border-border bg-card shadow-sm xl:h-full xl:w-auto"
                     ref={canvasRef}
                     onClick={(e: React.MouseEvent<HTMLCanvasElement>) => {
                         if (!isArtist) return;
@@ -213,6 +210,7 @@ export function RoomCanvas({
                         if (!rect || !canvas) return;
                         const scaleX = canvas.width / rect.width;
                         const scaleY = canvas.height / rect.height;
+
                         canvasStroke({
                             x: Math.round((e.clientX - rect.left) * scaleX),
                             y: Math.round((e.clientY - rect.top) * scaleY),
@@ -220,8 +218,8 @@ export function RoomCanvas({
                             size,
                         });
                     }}
-                ></canvas>
-            </div>
-        </div>
+                />
+            </CardContent>
+        </Card>
     );
 }

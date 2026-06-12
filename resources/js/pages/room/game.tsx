@@ -4,7 +4,7 @@ import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
 import { useRoomLeave } from '@/hooks/use-room-leave';
 import { dashboard } from '@/routes';
-import { Room } from '@/types';
+import { Room, SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
@@ -16,17 +16,22 @@ configureEcho({
 });
 
 export default function Game() {
-    const props = usePage().props;
+    const props = usePage<SharedData & { room: Room }>().props;
     const defaultRoom: Room = props.room as Room;
-    const currentUser = props.auth.user;
-    const [room, setRoom] = useState<Room>(defaultRoom);
+    const currentUser = props.auth.user!;
+    const currentUserId = String(currentUser.id);
+    const [room] = useState<Room>(defaultRoom);
     const [owner, setOwner] = useState<string>(room.owner);
     const [artist, setArtist] = useState<string>(room.artist);
-    const [isArtist, setIsArtist] = useState();
+    const [isArtist, setIsArtist] = useState<boolean>(
+        room.artist === currentUserId,
+    );
     useRoomLeave(room.id);
+
     useEffect(() => {
-        setIsArtist(() => artist === props.auth.user.id);
-    }, [artist]);
+        setIsArtist(() => artist === currentUserId);
+    }, [artist, currentUserId]);
+
     const [term, setTerm] = useState<string>(room.status.term);
     const [hint, setHint] = useState<string>('');
     const { listen: listenChangeOwner } = useSocket(
@@ -65,51 +70,53 @@ export default function Game() {
             }, 1200);
         },
     );
+
     useEffect(() => {
         listenChangeOwner();
         listenStartRound();
         listenRevealHint();
         listenGameOver();
         listenRoomDestroyed();
-    }, []);
+    }, [
+        listenChangeOwner,
+        listenGameOver,
+        listenRevealHint,
+        listenRoomDestroyed,
+        listenStartRound,
+    ]);
+
     const users = room.users;
+
     return (
         <>
             <ToastContainer position="bottom-right" />
-            <div
-                className={
-                    'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
-                }
-            >
-            <RoomCanvas
-                roomId={room.id}
-                term={term}
-                hint={hint}
-                defaultStrokes={room.canvas}
-                isArtist={isArtist}
-                timeLeft={room.status.time}
-                roundDuration={room.settings.timeLimit}
-                className={
-                    'col-span-7 row-span-5 flex flex-col gap-4 border border-accent'
-                }
-            />
-            <RoomUsers
-                roomId={room.id}
-                defaultUsers={users}
-                owner={owner}
-                artist={artist}
-                currentUserId={currentUser.id}
-                className={
-                    'col-span-3 row-span-2 flex flex-col gap-4 border border-accent'
-                }
-            />
-            <RoomChat
-                roomId={room.id}
-                defaultChat={room.chat}
-                className={`col-span-3 row-span-3 h-full w-full`}
-                guess
-            />
-            </div>
+            <main className="grid min-h-dvh gap-4 p-3 sm:gap-5 sm:p-5 xl:h-dvh xl:grid-cols-10 xl:grid-rows-5 xl:overflow-hidden xl:p-6">
+                <RoomCanvas
+                    roomId={room.id}
+                    term={term}
+                    hint={hint}
+                    defaultStrokes={room.canvas}
+                    isArtist={isArtist}
+                    timeLeft={room.status.time}
+                    roundDuration={room.settings.timeLimit}
+                    className="min-h-0 xl:col-span-7 xl:row-span-5"
+                />
+                <RoomUsers
+                    roomId={room.id}
+                    defaultUsers={users}
+                    owner={owner}
+                    artist={artist}
+                    currentUserId={currentUserId}
+                    className="min-h-0 xl:col-span-3 xl:row-span-2"
+                />
+                <RoomChat
+                    roomId={room.id}
+                    defaultChat={room.chat}
+                    guess
+                    showForm={false}
+                    className="min-h-80 xl:col-span-3 xl:row-span-3 xl:min-h-0"
+                />
+            </main>
         </>
     );
 }

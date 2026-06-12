@@ -66,7 +66,8 @@ export default function Lobby() {
             <ToastContainer position="bottom-right" />
             <div
                 className={
-                    'grid h-screen max-h-screen grid-cols-10 grid-rows-5 gap-5 p-10'
+                    'flex flex-col md:grid min-h-screen h-screen md:max-h-screen grid-rows-[3fr_1fr_5ft]  md:grid-cols-10 md:grid-rows-5 gap-5 p-10'
+
                 }
             >
             <RoomUsers
@@ -76,10 +77,10 @@ export default function Lobby() {
                 currentUserId={currentUser.id}
                 showScore={false}
                 className={
-                    'col-span-7 row-span-5 flex flex-col gap-4 border border-accent'
+                    'md:col-span-7 row-span-5 min-h-[40rem] md:min-h-full flex flex-col gap-4 border border-accent'
                 }
             />
-            <div className={'col-span-3 row-span-2 flex flex-col gap-5'}>
+            <div className={'md:col-span-3 md:row-span-2 flex flex-col gap-5'}>
                 <Button onClick={() => leaveRoom(room.id)}>Leave</Button>
                 <Button onClick={() => destroyRoom(room.id)}>
                     Destroy Room
@@ -89,7 +90,7 @@ export default function Lobby() {
             <RoomChat
                 roomId={room.id}
                 defaultChat={room.chat}
-                className={`col-span-3 row-span-3 h-full w-full`}
+                className={`md:col-span-3 md:row-span-3 h-full min-h-70 w-full`}
             />
             </div>
         </>
