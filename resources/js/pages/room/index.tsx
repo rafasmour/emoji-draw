@@ -26,6 +26,7 @@ import {
 } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, DoorOpen } from 'lucide-react';
 import * as React from 'react';
+import { createRoom } from '@/lib/utils';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -116,15 +117,21 @@ export default function RoomIndex() {
         },
     });
 
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Rooms" />
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <section className="rounded-3xl border border-sidebar-border/70 bg-background/95 p-6 shadow-xs dark:border-sidebar-border">
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm tracking-[0.2em] text-muted-foreground uppercase">
-                            Public Lobbies
-                        </p>
+                        <div className={"flex justify-between items-center w-full"}>
+                            <p className="text-sm tracking-[0.2em] text-muted-foreground uppercase">
+                                Public Lobbies
+                            </p>
+                            <Button size="sm" onClick={() => createRoom()}>
+                                Create Room
+                            </Button>
+                        </div>
                         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                             <div className="space-y-1">
                                 <h1 className="text-3xl font-semibold tracking-tight">

@@ -13,24 +13,12 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
 ];
-function generateRandomString(length: number): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let randomString = '';
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        randomString += characters.charAt(randomIndex);
-    }
-    return randomString;
-}
+
 
 export default function Dashboard() {
     const props = usePage().props;
     const createRoom = async () => {
-        const response = await router.post('/room/create', {name: generateRandomString(10)}, {});
-        // const data = response.data;
-        // if(data.room_id) {
-        //     window.location.href = `/room/${data.room_id}`;
-        // }
+        await router.post('/room/create', {name: generateRandomString(10)}, {});
     }
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
