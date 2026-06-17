@@ -9,6 +9,7 @@ use App\Events\OwnerLeave;
 use App\Events\PlayerKicked;
 use App\Events\RoomDestroyed;
 use App\Http\Contracts\ChatServiceInterface;
+use App\Http\Contracts\GameServiceInterface;
 use App\Http\Contracts\RoomEntranceServiceInterface;
 use App\Models\Room;
 use App\Models\User;
@@ -21,6 +22,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
     public function __construct(
         private ChatServiceInterface $chatService,
+        private GameServiceInterface $gameService,
     ) {}
 
     public function join(User $user, Room $room): void
@@ -32,6 +34,8 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         if (count($room->users) === $room->settings->cap) {
             throw new HttpException(422, 'Room is full.');
         }
+
+        $this->kickFromOtherRooms($user, $room);
 
         $room->users = $room->users->push(new RoomUser(
             id: $user->id,
@@ -57,6 +61,14 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $this->chatService->broadcastMessage($room, $message);
     }
 
+    private function kickFromOtherRooms(User $user, Room $room): void
+    {
+        $otherRooms = Room::where('users.id', $user->id)->where('_id', '!=', $room->id)->get();
+        foreach ($otherRooms as $otherRoom) {
+            $this->leave($user, $otherRoom);
+        }
+    }
+
     public function leave(User $user, Room $room): void
     {
         $newUsers = $room->users->filter(fn (RoomUser $roomUser) => $roomUser->id !== $user->id)->values();
@@ -65,7 +77,12 @@ class RoomEntranceService implements RoomEntranceServiceInterface
             throw new HttpException(404, 'User not found in room.');
         }
 
-        if (count($newUsers) <= 1) {
+        if (count($newUsers) <= 0) {
+            if ($room->status->started) {
+                $owner = User::find($room->owner);
+                $this->gameService->stop($owner, $room);
+            }
+
             $room->users = $newUsers;
             broadcast(new RoomDestroyed($room));
             $room->delete();
@@ -74,6 +91,11 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         }
 
         $room->users = $newUsers;
+
+        if ($newUsers->count() === 1 && $room->status->started) {
+            $owner = User::find($room->owner);
+            $this->gameService->stop($owner, $room);
+        }
 
         $message = [
             'user_id' => $user->id,
@@ -112,6 +134,11 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
         $playerKicked = User::find($targetUserId);
         $room->users = $newUsers;
+
+        if ($newUsers->count() === 1 && $room->status->started) {
+            $this->gameService->stop($owner, $room);
+        }
+
         $room->kicked_users = array_merge($room->kicked_users ?? [], [$targetUserId]);
         $kickedMessage = "You were kicked by {$owner->name}. You can't rejoin this room.";
 
