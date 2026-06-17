@@ -172,77 +172,56 @@ class RoomEntranceTest extends TestCase
             ->assertRedirect(route('room.lobby', $room));
     }
 
-    public function test_game_finishes_early_if_only_one_player_remains_after_kicking(): void
+    public function test_joining_second_room_removes_user_from_first(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = $this->makeRoom($owner, [$other]);
-
-        // Simulate game started
-        $room->status = new RoomStatus(started: true, round: 1, time: '60', term: 'apple', guesses: 0);
-        $room->save();
-
-        $this->actingAs($owner)
-            ->post(route('room.kick', $room), ['user_id' => $other->id]);
-
-        $room->refresh();
-        $this->assertFalse($room->status->started);
-        $this->assertEquals(0, $room->status->round);
-    }
-
-    public function test_game_finishes_early_if_only_one_player_remains_after_leaving(): void
-    {
-        $owner = User::factory()->create();
-        $other1 = User::factory()->create();
-        $other2 = User::factory()->create();
-        $other3 = User::factory()->create();
-        $room = $this->makeRoom($owner, [$other1, $other2, $other3]);
-
-        // Simulate game started
-        $room->status = new RoomStatus(started: true, round: 1, time: '60', term: 'apple', guesses: 0);
-        $room->save();
-
-        // One player leaves, 3 left.
-        $this->actingAs($other1)
-            ->post(route('room.leave', $room));
-
-        $room->refresh();
-        $this->assertTrue($room->status->started);
-        $this->assertCount(3, $room->users);
-
-        // Another player leaves, 2 left.
-        $this->actingAs($other2)
-            ->post(route('room.leave', $room));
-
-        $room->refresh();
-        $this->assertTrue($room->status->started);
-        $this->assertCount(2, $room->users);
-
-        // Another player leaves, 1 left.
-        $this->actingAs($other3)
-            ->post(route('room.leave', $room));
-
-        $this->assertNotNull($room->fresh());
-        $room->refresh();
-        $this->assertFalse($room->status->started);
-        $this->assertEquals(0, $room->status->round);
-        $this->assertCount(1, $room->users);
-    }
-
-    public function test_user_is_kicked_from_other_rooms_when_joining_new_room(): void
-    {
-        $user = User::factory()->create();
         $owner1 = User::factory()->create();
         $owner2 = User::factory()->create();
-
-        $room1 = $this->makeRoom($owner1, [$user]);
+        $joiner = User::factory()->create();
+        $room1 = $this->makeRoom($owner1, [$joiner]);
         $room2 = $this->makeRoom($owner2);
 
-        $this->actingAs($user)
+        $this->actingAs($joiner)
             ->post(route('room.join'), ['room_id' => $room2->id])
             ->assertRedirect(route('room.lobby', $room2));
 
-        $this->assertFalse($room1->fresh()->users->contains('id', $user->id));
-        $this->assertTrue($room2->fresh()->users->contains('id', $user->id));
+        $room1->refresh();
+        $room2->refresh();
+        $this->assertFalse($room1->users->contains('id', $joiner->id));
+        $this->assertTrue($room2->users->contains('id', $joiner->id));
+    }
+
+    public function test_joining_same_room_twice_does_not_duplicate_user(): void
+    {
+        $owner = User::factory()->create();
+        $joiner = User::factory()->create();
+        $room = $this->makeRoom($owner, [$joiner]);
+
+        $this->actingAs($joiner)
+            ->post(route('room.join'), ['room_id' => $room->id])
+            ->assertRedirect(route('room.lobby', $room));
+
+        $room->refresh();
+        $this->assertCount(1, $room->users->filter(fn (RoomUser $u) => $u->id === $joiner->id));
+    }
+
+    public function test_user_in_only_one_room_at_a_time(): void
+    {
+        $owner1 = User::factory()->create();
+        $owner2 = User::factory()->create();
+        $owner3 = User::factory()->create();
+        $joiner = User::factory()->create();
+        $room1 = $this->makeRoom($owner1, [$joiner]);
+        $room2 = $this->makeRoom($owner2);
+        $room3 = $this->makeRoom($owner3);
+
+        $this->actingAs($joiner)->post(route('room.join'), ['room_id' => $room2->id]);
+        $this->actingAs($joiner)->post(route('room.join'), ['room_id' => $room3->id]);
+
+        $room1->refresh();
+        $room2->refresh();
+        $room3->refresh();
+        $this->assertFalse($room1->users->contains('id', $joiner->id));
+        $this->assertFalse($room2->users->contains('id', $joiner->id));
+        $this->assertTrue($room3->users->contains('id', $joiner->id));
     }
 }

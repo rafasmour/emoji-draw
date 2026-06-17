@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Room;
 
+use App\Contracts\RoomServiceInterface;
 use App\Http\Contracts\RoomEntranceServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
@@ -13,13 +14,15 @@ class RoomEntranceController extends Controller
 {
     public function __construct(
         private RoomEntranceServiceInterface $roomEntranceService,
+        private RoomServiceInterface $roomService,
     ) {}
 
-    public function join(Request $request)
+    public function join(Request $request): mixed
     {
         $validated = $request->validate([
             'room_id' => ['required', 'exists:rooms,id'],
         ]);
+
         $room = Room::find($validated['room_id']);
 
         try {
@@ -32,6 +35,15 @@ class RoomEntranceController extends Controller
             return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         }
 
+        $currentRoom = $this->roomService->findRoomWithUser($request->user()->id);
+        if ($currentRoom !== null && $currentRoom->id !== $room->id) {
+            $this->roomService->removeUser($currentRoom, $request->user());
+        }
+
+        if (! $this->roomService->userInRoom($request->user()->id, $room)) {
+            $this->roomService->addUser($room, $request->user());
+        }
+
         if ($request->expectsJson()) {
             return response()->json(['redirect' => route('room.lobby', $room)]);
         }
@@ -39,7 +51,7 @@ class RoomEntranceController extends Controller
         return response()->redirectToRoute('room.lobby', $room);
     }
 
-    public function leave(Request $request, Room $room)
+    public function leave(Request $request, Room $room): mixed
     {
         try {
             $this->roomEntranceService->leave($request->user(), $room);
@@ -47,14 +59,7 @@ class RoomEntranceController extends Controller
             return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         }
 
-        if ($request->expectsJson()) {
-            return response()->json(['redirect' => route('room.rooms')]);
-        }
-
-        return response()->redirectToRoute('room.rooms');
-    }
-
-    public function kick(Request $request, Room $room)
+    public function kick(Request $request, Room $room): mixed
     {
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],

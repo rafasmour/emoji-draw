@@ -51,8 +51,10 @@ export interface Room {
         {
             id: string;
             name: string;
+            score: number;
             guesses: number;
             correct_guesses: number;
+            guessed: boolean;
         }
     >;
     chat: Array<{
