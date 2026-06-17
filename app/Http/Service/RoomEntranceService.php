@@ -24,6 +24,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
     public function __construct(
         private ChatServiceInterface $chatService,
         private GameServiceInterface $gameService,
+        private RoomServiceInterface $roomService,
     ) {}
 
     public function join(User $user, ?Room $room): void

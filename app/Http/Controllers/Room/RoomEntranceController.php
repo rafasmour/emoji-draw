@@ -45,7 +45,7 @@ class RoomEntranceController extends Controller
         try {
             $this->roomEntranceService->leave($request->user(), $room);
 
-            return redirect()->route('room.rooms');
+            return response()->redirectToRoute('room.rooms');
         } catch (HttpException $e) {
             return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
         }
