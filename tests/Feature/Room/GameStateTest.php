@@ -4,16 +4,17 @@ namespace Tests\Feature\Room;
 
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
-use App\Http\Controllers\Room\GameActionController;
-use App\Http\Controllers\Room\GameStateController;
+use App\Events\StopRound;
+use App\Http\Contracts\GameActionServiceInterface;
 use App\Http\Contracts\GameServiceInterface;
 use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\Term;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Support\Facades\Queue;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class GameStateTest extends TestCase
@@ -24,109 +25,270 @@ class GameStateTest extends TestCase
         Room::query()->delete();
         User::query()->delete();
         Term::query()->delete();
-        Term::factory()->create();
+        Term::factory()->create(['value' => 'apple']);
+        Carbon::setTestNow('2026-01-01 00:00:00');
     }
 
     protected function tearDown(): void
     {
+        Carbon::setTestNow();
         Room::query()->delete();
         User::query()->delete();
         Term::query()->delete();
         parent::tearDown();
     }
 
-    private function makeRoom(User $owner, User $other, ?RoomStatus $status = null): Room
+    private function createGameRoom(User $owner, array $guessers = [], ?RoomStatus $status = null): Room
     {
+        $users = [[
+            'id' => $owner->id,
+            'name' => $owner->name,
+            'score' => 0,
+            'guesses' => 0,
+            'correct_guesses' => 0,
+            'guessed' => false,
+            'room_token' => null,
+        ]];
+
+        foreach ($guessers as $guesser) {
+            $users[] = [
+                'id' => $guesser->id,
+                'name' => $guesser->name,
+                'score' => 0,
+                'guesses' => 0,
+                'correct_guesses' => 0,
+                'guessed' => false,
+                'room_token' => null,
+            ];
+        }
+
         return Room::create([
-            'name' => 'Test Room',
+            'name' => "Test Room {$owner->id}",
             'owner' => $owner->id,
             'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 10, 'guesses' => 3, 'correct_guesses' => 2, 'guessed' => true, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 5, 'guesses' => 2, 'correct_guesses' => 1, 'guessed' => true, 'room_token' => null],
-            ],
+            'users' => $users,
             'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
             'chat' => [],
-            'canvas' => [['x' => 1, 'y' => 1, 'emoji' => '😀', 'size' => 10]],
-            'started' => true,
-            'status' => $status ?? new RoomStatus(started: true, round: 3, time: '2026-01-01 00:01:00', term: 'cat', guesses: 2),
+            'canvas' => [],
+            'kicked_users' => [],
+            'status' => $status ?? new RoomStatus(
+                started: true,
+                round: 1,
+                time: Carbon::now()->addSeconds(60)->toDateTimeString('second'),
+                term: 'apple',
+                guesses: 0,
+            ),
         ]);
     }
 
-    public function test_finish_resets_started_to_false(): void
+    private function reloadRoom(Room $room): Room
+    {
+        return Room::query()->firstOrFail();
+    }
+
+    public function test_start_resets_players_and_dispatches_one_round_handler(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->createGameRoom(
+            $owner,
+            [$other],
+            new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0),
+        );
+
+        $room->users = $room->users->map(fn ($user, $index) => new \App\DataObjects\RoomUser(
+            id: $user->id,
+            name: $user->name,
+            score: $index === 0 ? 20 : 10,
+            guesses: 2,
+            correct_guesses: 1,
+            guessed: true,
+            room_token: null,
+        ));
+        $room->save();
+
+        app(GameServiceInterface::class)->start($owner, $room);
+
+        $room = $this->reloadRoom($room);
+
+        $this->assertTrue($room->status->started);
+        $this->assertCount(1, $room->chat);
+        $this->assertSame('started game', $room->chat->last()->message);
+        $room->users->each(function ($user): void {
+            $this->assertSame(0, $user->score);
+            $this->assertSame(0, $user->guesses);
+            $this->assertSame(0, $user->correct_guesses);
+            $this->assertFalse($user->guessed);
+        });
+
+        Queue::assertPushed(RoundHandler::class, 1);
+    }
+
+    public function test_start_returns_forbidden_for_non_owner(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->createGameRoom(
+            $owner,
+            [$other],
+            new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0),
+        );
+
+        try {
+            app(GameServiceInterface::class)->start($other, $room);
+            $this->fail('Expected non-owner start to throw.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+
+        Queue::assertNothingPushed();
+    }
+
+    public function test_finish_resets_game_state(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other);
+        $room = $this->createGameRoom($owner, [$other]);
 
         app(GameServiceInterface::class)->finish($room);
 
-        $room->refresh();
+        $room = $this->reloadRoom($room);
         $this->assertFalse($room->status->started);
+        $this->assertSame(0, $room->status->round);
+        $this->assertSame('0', $room->status->time);
+        $this->assertSame('', $room->status->term);
     }
 
-    public function test_finish_resets_round_and_time(): void
+    public function test_correct_guess_updates_scores_and_state_once(): void
     {
+        Queue::fake();
         $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other);
+        $guesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$guesser]);
 
-        app(GameServiceInterface::class)->finish($room);
+        app(GameActionServiceInterface::class)->handleGuess($guesser, $room, 'apple');
 
-        $room->refresh();
-        $this->assertEquals(0, $room->status->round);
-        $this->assertEquals('0', $room->status->time);
+        $room = $this->reloadRoom($room);
+        $guesserStats = $room->users->firstWhere('id', $guesser->id);
+        $artistStats = $room->users->firstWhere('id', $owner->id);
+
+        $this->assertSame(600, $guesserStats->score);
+        $this->assertSame(1, $guesserStats->correct_guesses);
+        $this->assertTrue($guesserStats->guessed);
+        $this->assertSame(300, $artistStats->score);
+        $this->assertSame(1, $room->status->guesses);
+        $this->assertCount(1, $room->chat);
+        $this->assertSame('Guessed Correctly!', $room->chat->last()->message);
+
+        Queue::assertPushed(RoundHandler::class, 1);
     }
 
-    public function test_finish_clears_term(): void
+    public function test_incorrect_guess_adds_one_chat_message_and_no_points(): void
     {
+        Queue::fake();
         $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other);
+        $guesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$guesser]);
 
-        app(GameServiceInterface::class)->finish($room);
+        app(GameActionServiceInterface::class)->handleGuess($guesser, $room, 'wrong');
 
-        $room->refresh();
-        $this->assertEquals('', $room->status->term);
+        $room = $this->reloadRoom($room);
+        $guesserStats = $room->users->firstWhere('id', $guesser->id);
+        $artistStats = $room->users->firstWhere('id', $owner->id);
+
+        $this->assertSame(0, $guesserStats->score);
+        $this->assertSame(1, $guesserStats->guesses);
+        $this->assertSame(0, $artistStats->score);
+        $this->assertSame(0, $room->status->guesses);
+        $this->assertCount(1, $room->chat);
+        $this->assertSame('wrong', $room->chat->last()->message);
+
+        Queue::assertNothingPushed();
     }
 
-    public function test_start_succeeds_after_finish(): void
+    public function test_second_correct_guesser_does_not_get_first_guess_bonus(): void
     {
+        Queue::fake();
         $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other);
+        $firstGuesser = User::factory()->create();
+        $secondGuesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$firstGuesser, $secondGuesser]);
 
-        app(GameServiceInterface::class)->finish($room);
-        $room->refresh();
+        app(GameActionServiceInterface::class)->handleGuess($firstGuesser, $room, 'apple');
 
-        $this->actingAs($owner)
-            ->postJson(route('room.start', $room))
-            ->assertOk();
+        $room = $this->reloadRoom($room);
+        $firstScore = $room->users->firstWhere('id', $firstGuesser->id)->score;
+
+        app(GameActionServiceInterface::class)->handleGuess($secondGuesser, $room, 'apple');
+
+        $room = $this->reloadRoom($room);
+        $secondScore = $room->users->firstWhere('id', $secondGuesser->id)->score;
+
+        $this->assertSame(600, $firstScore);
+        $this->assertSame(500, $secondScore);
     }
 
-    public function test_start_blocked_while_game_in_progress(): void
+    public function test_repeat_guess_returns_forbidden_without_extra_mutation(): void
     {
+        Queue::fake();
         $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other);
+        $guesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$guesser]);
 
-        $this->actingAs($owner)
-            ->postJson(route('room.start', $room))
-            ->assertStatus(403);
+        app(GameActionServiceInterface::class)->handleGuess($guesser, $room, 'apple');
+
+        try {
+            app(GameActionServiceInterface::class)->handleGuess($guesser, $room, 'apple');
+            $this->fail('Expected repeated guess to throw.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+
+        $room = $this->reloadRoom($room);
+        $guesserStats = $room->users->firstWhere('id', $guesser->id);
+
+        $this->assertSame(600, $guesserStats->score);
+        $this->assertSame(1, $guesserStats->correct_guesses);
+        $this->assertCount(1, $room->chat);
     }
 
-    public function test_start_returns_json_redirect_when_expects_json(): void
+    public function test_artist_cannot_guess(): void
     {
+        Queue::fake();
         $owner = User::factory()->create();
         $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other, new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0));
+        $room = $this->createGameRoom($owner, [$other]);
 
-        $response = $this->actingAs($owner)
-            ->postJson(route('room.start', $room))
-            ->assertOk()
-            ->assertJsonStructure(['redirect']);
+        try {
+            app(GameActionServiceInterface::class)->handleGuess($owner, $room, 'apple');
+            $this->fail('Expected artist guess to throw.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
 
-        $this->assertStringContainsString('/room/', $response->json('redirect'));
+        $room = $this->reloadRoom($room);
+        $this->assertCount(0, $room->chat);
+        $this->assertSame(0, $room->status->guesses);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_all_non_artists_guessing_correctly_queues_one_round_transition_each(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $firstGuesser = User::factory()->create();
+        $secondGuesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$firstGuesser, $secondGuesser]);
+
+        app(GameActionServiceInterface::class)->handleGuess($firstGuesser, $room, 'apple');
+
+        Queue::assertNothingPushed();
+
+        app(GameActionServiceInterface::class)->handleGuess($secondGuesser, $room, 'apple');
+
+        Queue::assertPushed(RoundHandler::class, 1);
     }
 
     public function test_stale_round_handler_self_deletes(): void
@@ -134,360 +296,30 @@ class GameStateTest extends TestCase
         Queue::fake();
         $owner = User::factory()->create();
         $other = User::factory()->create();
-        $room = $this->makeRoom($owner, $other, new RoomStatus(started: true, round: 2, time: '2099-01-01 00:00:00', term: 'cat', guesses: 0));
+        $room = $this->createGameRoom(
+            $owner,
+            [$other],
+            new RoomStatus(started: true, round: 2, time: '2099-01-01 00:00:00', term: 'cat', guesses: 0),
+        );
 
         $job = new RoundHandler($room, forRound: 1);
         $job->handle(app(GameServiceInterface::class));
 
-        $room->refresh();
-        $this->assertEquals(2, $room->status->round);
+        $room = $this->reloadRoom($room);
+        $this->assertSame(2, $room->status->round);
         Queue::assertNothingPushed();
     }
 
-    public function test_round_ends_early_when_all_non_artists_guessed(): void
+    public function test_stop_round_broadcasts_on_room_private_channel(): void
     {
-        Queue::fake();
         $owner = User::factory()->create();
         $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Early Round Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: '2099-01-01 00:00:00', term: 'apple', guesses: 0),
-        ]);
+        $room = $this->createGameRoom($owner, [$other]);
 
-        $this->actingAs($other)
-            ->postJson(route('room.guess', $room), ['guess' => 'apple'])
-            ->assertSuccessful();
+        $channels = (new StopRound($room))->broadcastOn();
 
-        Queue::assertPushed(RoundHandler::class);
-    }
-
-    public function test_correct_guess_awards_guesser_points(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Score Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $guesser = $room->users->firstWhere('id', $other->id);
-        $this->assertGreaterThan(0, $guesser->score);
-    }
-
-    public function test_correct_guess_awards_artist_points(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Artist Score Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $artist = $room->users->firstWhere('id', $owner->id);
-        $this->assertGreaterThan(0, $artist->score);
-    }
-
-    public function test_artist_gets_less_score_than_guesser(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Score Ratio Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $guesser = $room->users->firstWhere('id', $other->id);
-        $artist = $room->users->firstWhere('id', $owner->id);
-        $this->assertLessThan($guesser->score, $artist->score);
-    }
-
-    public function test_first_guesser_gets_bonus(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $third = User::factory()->create();
-        $room = Room::create([
-            'name' => 'First Guess Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $third->id, 'name' => $third->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $firstRequest = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $firstRequest->setUserResolver(fn () => $other);
-        (new GameActionController)->guess($firstRequest, $room);
-        $room->refresh();
-        $firstScore = $room->users->firstWhere('id', $other->id)->score;
-
-        $secondRequest = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $secondRequest->setUserResolver(fn () => $third);
-        (new GameActionController)->guess($secondRequest, $room);
-        $room->refresh();
-        $secondScore = $room->users->firstWhere('id', $third->id)->score;
-
-        $this->assertGreaterThan($secondScore, $firstScore);
-    }
-
-    public function test_wrong_guess_awards_no_points(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Wrong Guess Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'wrong']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $guesser = $room->users->firstWhere('id', $other->id);
-        $artist = $room->users->firstWhere('id', $owner->id);
-        $this->assertEquals(0, $guesser->score);
-        $this->assertEquals(0, $artist->score);
-    }
-
-    public function test_correct_guess_awards_guesser_points(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Score Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $guesser = $room->users->firstWhere('id', $other->id);
-        $this->assertGreaterThan(0, $guesser->score);
-    }
-
-    public function test_correct_guess_awards_artist_points(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Artist Score Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $artist = $room->users->firstWhere('id', $owner->id);
-        $this->assertGreaterThan(0, $artist->score);
-    }
-
-    public function test_artist_gets_less_score_than_guesser(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Score Ratio Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $guesser = $room->users->firstWhere('id', $other->id);
-        $artist = $room->users->firstWhere('id', $owner->id);
-        $this->assertLessThan($guesser->score, $artist->score);
-    }
-
-    public function test_first_guesser_gets_bonus(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $third = User::factory()->create();
-        $room = Room::create([
-            'name' => 'First Guess Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $third->id, 'name' => $third->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $firstRequest = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $firstRequest->setUserResolver(fn () => $other);
-        (new GameActionController)->guess($firstRequest, $room);
-        $room->refresh();
-        $firstScore = $room->users->firstWhere('id', $other->id)->score;
-
-        $secondRequest = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'apple']);
-        $secondRequest->setUserResolver(fn () => $third);
-        (new GameActionController)->guess($secondRequest, $room);
-        $room->refresh();
-        $secondScore = $room->users->firstWhere('id', $third->id)->score;
-
-        $this->assertGreaterThan($secondScore, $firstScore);
-    }
-
-    public function test_wrong_guess_awards_no_points(): void
-    {
-        Queue::fake();
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
-        $room = Room::create([
-            'name' => 'Wrong Guess Room',
-            'owner' => $owner->id,
-            'artist' => $owner->id,
-            'users' => [
-                ['id' => $owner->id, 'name' => $owner->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-                ['id' => $other->id, 'name' => $other->name, 'score' => 0, 'guesses' => 0, 'correct_guesses' => 0, 'guessed' => false, 'room_token' => null],
-            ],
-            'settings' => new RoomSettings(difficulty: 'easy', public: true, cap: 8, rounds: 3, categories: [], language: 'en', timeLimit: 60),
-            'chat' => [],
-            'canvas' => [],
-            'started' => true,
-            'status' => new RoomStatus(started: true, round: 1, time: Carbon::now()->addSeconds(60)->toDateTimeString('second'), term: 'apple', guesses: 0),
-        ]);
-
-        $request = Request::create('/room/'.$room->id.'/guess', 'POST', ['guess' => 'wrong']);
-        $request->setUserResolver(fn () => $other);
-
-        (new GameActionController)->guess($request, $room);
-
-        $room->refresh();
-        $guesser = $room->users->firstWhere('id', $other->id);
-        $artist = $room->users->firstWhere('id', $owner->id);
-        $this->assertEquals(0, $guesser->score);
-        $this->assertEquals(0, $artist->score);
+        $this->assertCount(1, $channels);
+        $this->assertInstanceOf(PrivateChannel::class, $channels[0]);
+        $this->assertSame("private-room.{$room->id}", $channels[0]->name);
     }
 }

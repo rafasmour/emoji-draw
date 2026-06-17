@@ -29,7 +29,7 @@ class RoomOwnerService implements RoomOwnerServiceInterface
         }
 
         $room->owner = $newOwnerId;
-        $newOwner = User::find($newOwnerId);
+        $newOwner = User::where('id', $newOwnerId)->first();
 
         $message = [
             'user_id' => $requester->id,
@@ -51,7 +51,7 @@ class RoomOwnerService implements RoomOwnerServiceInterface
         $userIds = $room->users->pluck('id');
         $randomIndex = fake()->numberBetween(0, $userIds->count() - 1);
         $room->owner = $userIds->get($randomIndex);
-        $newOwner = User::find($room->owner);
+        $newOwner = User::where('id', $room->owner)->first();
 
         $message = [
             'user_id' => $newOwner->getKey(),

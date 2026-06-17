@@ -50,6 +50,15 @@ class GameService implements GameServiceInterface
         $roomChat = $room->chat ?? [];
         $roomChat[] = $message;
         $room->chat = $roomChat;
+        $room->users = $room->users->map(fn (RoomUser $roomUser) => new RoomUser(
+            id: $roomUser->id,
+            name: $roomUser->name,
+            score: 0,
+            guesses: 0,
+            correct_guesses: 0,
+            guessed: false,
+            room_token: $roomUser->room_token,
+        ));
 
         $userIds = $room->users->pluck('id')->unique()->values();
         $room->artist = $userIds->get(fake()->numberBetween(0, $userIds->count() - 1));
@@ -97,6 +106,7 @@ class GameService implements GameServiceInterface
             guessed: false,
             room_token: $u->room_token,
         ));
+        $room->artist = null;
         $room->save();
 
         broadcast(new StopGame($room));
@@ -142,6 +152,7 @@ class GameService implements GameServiceInterface
         $chat = $room->chat ?? [];
         $chat[] = $message;
         $room->chat = $chat;
+        $room->artist = null;
         $room->save();
 
         broadcast(new GameOver($room));
@@ -188,7 +199,6 @@ class GameService implements GameServiceInterface
         $chat[] = $message;
         $room->chat = $chat;
         $room->save();
-        $room->refresh();
 
         broadcast(new StartRound($room));
         $this->chatService->broadcastMessage($room, $message);
