@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { joinRoom } from '@/requests/room/room';
-import { dashboard } from '@/routes';
 import { rooms as roomsIndex } from '@/routes/room';
 import {
     type BreadcrumbItem,
@@ -29,10 +28,6 @@ import * as React from 'react';
 import { createRoom } from '@/lib/utils';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard().url,
-    },
     {
         title: 'Rooms',
         href: roomsIndex().url,

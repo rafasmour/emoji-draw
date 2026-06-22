@@ -17,5 +17,5 @@ function generateRandomString(length: number): string {
     return randomString;
 }
 export const createRoom = async () => {
-    await router.post('/room/create', { name: generateRandomString(10) }, {});
+    router.post('/room/create', { name: generateRandomString(10) }, {});
 };

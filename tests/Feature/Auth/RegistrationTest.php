@@ -28,6 +28,6 @@ class RegistrationTest extends TestCase
 
         $this->assertAuthenticated();
         $this->assertTrue(User::query()->where('email', 'test@example.com')->exists());
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('room.rooms', absolute: false));
     }
 }

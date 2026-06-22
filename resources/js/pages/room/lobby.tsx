@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useSocket } from '@/connection/echo';
 import { useRoomLeave } from '@/hooks/use-room-leave';
 import { destroyRoom, leaveRoom, startGame } from '@/requests/room/room';
-import { dashboard } from '@/routes';
+import { rooms as roomIndex } from '@/routes/room';
 import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { configureEcho, useEcho } from '@laravel/echo-react';
@@ -46,7 +46,7 @@ export default function Lobby() {
         () => {
             toast.error('Room was destroyed.');
             setTimeout(() => {
-                window.location.href = dashboard().url;
+                window.location.href = roomIndex().url;
             }, 1200);
         },
     );

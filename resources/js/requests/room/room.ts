@@ -20,11 +20,8 @@ const getCsrfToken = (): string =>
 const navigate = (url: string) => router.visit(url);
 
 const handleError = (error: unknown) => {
-    if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message ?? 'Something went wrong.');
-    } else {
-        toast.error('Something went wrong.');
-    }
+    
+   toast.error(error.response?.data?.message ?? 'Something went wrong.');
 };
 
 export const leaveRoom = async (

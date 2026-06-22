@@ -114,7 +114,7 @@ export function RoomChat({
                     </div>
                 )}
             </CardContent>
-                <CardFooter className="hidden w-full lg:flex lg:items-center lg:justify-center gap-2 border-t border-border p-0">
+                <CardFooter className="w-full lg:flex lg:items-center lg:justify-center gap-2 border-t border-border p-0">
                     <RoomChatMessageForm
                         value={message}
                         onChange={setMessage}

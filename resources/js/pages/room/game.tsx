@@ -3,7 +3,7 @@ import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
 import { useRoomLeave } from '@/hooks/use-room-leave';
-import { dashboard } from '@/routes';
+import { rooms } from '@/routes/room/';
 import { Room, SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { configureEcho } from '@laravel/echo-react';
@@ -66,7 +66,7 @@ export default function Game() {
         () => {
             toast.error('Room was destroyed.');
             setTimeout(() => {
-                window.location.href = dashboard().url;
+                window.location.href = rooms().url;
             }, 1200);
         },
     );
