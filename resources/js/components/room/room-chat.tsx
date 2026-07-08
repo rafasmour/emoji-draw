@@ -11,7 +11,6 @@ import { useSocket } from '@/connection/echo';
 import { cn } from '@/lib/utils';
 import { sendGuess, sendMessage } from '@/requests/room/room';
 import { Room } from '@/types';
-import { configureEcho } from '@laravel/echo-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
 interface RoomChatProps {
@@ -21,11 +20,6 @@ interface RoomChatProps {
     guess?: boolean;
     showForm?: boolean;
 }
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
 
 export function RoomChat({
     roomId,

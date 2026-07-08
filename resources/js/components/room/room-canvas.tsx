@@ -12,13 +12,7 @@ import { useSocket } from '@/connection/echo';
 import { cn } from '@/lib/utils';
 import { sendGuess, sendStroke } from '@/requests/room/room';
 import { Room } from '@/types';
-import { configureEcho } from '@laravel/echo-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
 
 const CANVAS_LOGICAL_SIZE = 3000;
 
