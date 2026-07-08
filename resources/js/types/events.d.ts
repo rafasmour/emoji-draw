@@ -11,6 +11,11 @@ export interface RoomUserPayload {
 }
 
 export interface EventPayloads {
+    ArtistTermAssigned: {
+        event: 'ArtistTermAssigned';
+        term: string;
+        round: number;
+    };
     CanvasStroke: {
         stroke: { x: number; y: number; size: number; emoji: string };
     };
@@ -79,9 +84,9 @@ export interface EventPayloads {
     };
     StartRound: {
         event: 'StartRound';
-        term: string;
         artist_id: string;
         time: string;
+        round: number;
         initial_hint: string;
     };
     StopGame: {

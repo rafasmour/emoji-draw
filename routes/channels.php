@@ -15,3 +15,13 @@ Broadcast::channel('room.{roomId}', function ($user, $roomId) {
 
     return app(RoomServiceInterface::class)->userInRoom($user->id, $room);
 });
+
+Broadcast::channel('room.{roomId}.user.{userId}', function ($user, $roomId, $userId) {
+    if ((string) $user->getKey() !== (string) $userId) {
+        return false;
+    }
+
+    $room = Room::findOrFail($roomId);
+
+    return app(RoomServiceInterface::class)->userInRoom($user->id, $room);
+});

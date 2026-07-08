@@ -4,6 +4,7 @@ namespace App\Http\Service;
 
 use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
+use App\Events\ArtistTermAssigned;
 use App\Events\ClearCanvas;
 use App\Events\GameOver;
 use App\Events\StartGame;
@@ -66,13 +67,16 @@ class GameService implements GameServiceInterface
             started: true,
             round: 0,
             time: Carbon::now()->addSeconds($roomSettings->timeLimit)->toDateTimeString('second'),
-            term: 'test',
+            term: $this->randomTerm(),
             guesses: 0,
         );
         $room->save();
 
         RoundHandler::dispatch($room, $room->status->round)->delay(now()->addSeconds($roomSettings->timeLimit));
         broadcast(new StartGame($room));
+        $this->broadcastRoundStarted($room);
+        HintHandler::dispatch($room, $room->status->round)
+            ->delay(now()->addSeconds(HintHandler::HINT_INTERVAL_SECONDS));
     }
 
     public function stop(User $user, Room $room): void
@@ -200,11 +204,17 @@ class GameService implements GameServiceInterface
         $room->chat = $chat;
         $room->save();
 
-        broadcast(new StartRound($room));
+        $this->broadcastRoundStarted($room);
         $this->chatService->broadcastMessage($room, $message);
         broadcast(new ClearCanvas($room));
 
         HintHandler::dispatch($room, $room->status->round)
             ->delay(now()->addSeconds(HintHandler::HINT_INTERVAL_SECONDS));
+    }
+
+    private function broadcastRoundStarted(Room $room): void
+    {
+        broadcast(new StartRound($room));
+        broadcast(new ArtistTermAssigned($room));
     }
 }
