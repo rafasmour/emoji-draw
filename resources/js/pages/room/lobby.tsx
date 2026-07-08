@@ -2,26 +2,22 @@ import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { Button } from '@/components/ui/button';
 import { useSocket } from '@/connection/echo';
+import { useRoomConnectionLease } from '@/hooks/use-room-connection-lease';
 import { useRoomLeave } from '@/hooks/use-room-leave';
 import { destroyRoom, leaveRoom, startGame } from '@/requests/room/room';
 import { rooms as roomIndex } from '@/routes/room';
-import { Room } from '@/types';
+import { Room, SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { configureEcho, useEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
 export default function Lobby() {
-    const props = usePage().props;
+    const props = usePage<SharedData & { room: Room }>().props;
     const defaultRoom: Room = props.room as Room;
-    const currentUser = props.auth.user;
+    const currentUser = props.auth.user!;
     const [room, setRoom] = useState<Room>(defaultRoom);
     const users = room.users;
     useRoomLeave(room.id);
+    useRoomConnectionLease(room.id, props.roomConnection.heartbeatIntervalSeconds);
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
         'ChangeOwner',
@@ -74,7 +70,7 @@ export default function Lobby() {
                 roomId={room.id}
                 defaultUsers={users}
                 owner={room.owner}
-                currentUserId={currentUser.id}
+                currentUserId={String(currentUser.id)}
                 showScore={false}
                 className={
                     'md:col-span-7 row-span-5 min-h-[40rem] md:min-h-full flex flex-col gap-4 border border-accent'

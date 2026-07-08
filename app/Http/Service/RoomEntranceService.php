@@ -11,6 +11,7 @@ use App\Events\PlayerKicked;
 use App\Events\RoomDestroyed;
 use App\Http\Contracts\ChatServiceInterface;
 use App\Http\Contracts\GameServiceInterface;
+use App\Http\Contracts\RoomConnectionLeaseServiceInterface;
 use App\Http\Contracts\RoomEntranceServiceInterface;
 use App\Models\Room;
 use App\Models\User;
@@ -25,6 +26,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         private ChatServiceInterface $chatService,
         private GameServiceInterface $gameService,
         private RoomServiceInterface $roomService,
+        private RoomConnectionLeaseServiceInterface $roomConnectionLeaseService,
     ) {}
 
     public function join(User $user, ?Room $room): void
@@ -82,6 +84,8 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
     public function leave(User $user, Room $room): void
     {
+        $this->roomConnectionLeaseService->clearUser($room, $user->getKey());
+
         $newUsers = $room->users->filter(fn (RoomUser $roomUser) => $roomUser->id !== $user->id)->values();
 
         if (count($newUsers) === count($room->users)) {
@@ -95,6 +99,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
             }
 
             $room->users = $newUsers;
+            $this->roomConnectionLeaseService->clearRoom($room);
             broadcast(new RoomDestroyed($room));
             $room->delete();
 
@@ -124,6 +129,10 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
         broadcast(new Leave($user, $room))->toOthers();
         $this->chatService->broadcastMessage($room, $message);
+        if($newUsers->count() === 1 && $room->status->started)
+        {
+            $this->gameService->stop(User::find($room->owner), $room);
+        }
     }
 
     public function kick(User $owner, Room $room, string $targetUserId): void
@@ -144,6 +153,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
         $playerKicked = User::where('id', $targetUserId)->first();
         $room->users = $newUsers;
+        $this->roomConnectionLeaseService->clearUser($room, $targetUserId);
 
         if ($newUsers->count() === 1 && $room->status->started) {
             $this->gameService->stop($owner, $room);

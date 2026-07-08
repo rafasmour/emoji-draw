@@ -2,6 +2,7 @@ import { RoomCanvas } from '@/components/room/room-canvas';
 import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
+import { useRoomConnectionLease } from '@/hooks/use-room-connection-lease';
 import { useRoomLeave } from '@/hooks/use-room-leave';
 import { rooms } from '@/routes/room/';
 import { Room, SharedData } from '@/types';
@@ -26,6 +27,10 @@ export default function Game() {
             : { round: room.status.round, term: room.status.term },
     );
     useRoomLeave(room.id);
+    useRoomConnectionLease(
+        room.id,
+        props.roomConnection.heartbeatIntervalSeconds,
+    );
 
     useEffect(() => {
         setIsArtist(() => artist === currentUserId);
@@ -76,6 +81,11 @@ export default function Game() {
         'GameOver',
         () => router.visit(`/room/${room.id}/results`),
     );
+    const { listen: listenStopGame } = useSocket(
+        `room.${room.id}`,
+        'StopGame',
+        () => router.visit(`/room/${room.id}`),
+    );
     const { listen: listenRoomDestroyed } = useSocket(
         `room.${room.id}`,
         'RoomDestroyed',
@@ -93,6 +103,7 @@ export default function Game() {
         listenArtistTermAssigned();
         listenRevealHint();
         listenGameOver();
+        listenStopGame();
         listenRoomDestroyed();
     }, [
         listenChangeOwner,
@@ -101,6 +112,7 @@ export default function Game() {
         listenRevealHint,
         listenRoomDestroyed,
         listenStartRound,
+        listenStopGame,
     ]);
 
     const users = room.users;
