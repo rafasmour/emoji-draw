@@ -79,9 +79,9 @@ class GameService implements GameServiceInterface
             ->delay(now()->addSeconds(HintHandler::HINT_INTERVAL_SECONDS));
     }
 
-    public function stop(User $user, Room $room): void
+    public function stop(User $user, Room $room, bool $systemStop = false): void
     {
-        if ($user->id !== $room->owner) {
+        if (! $systemStop && $user->id !== $room->owner) {
             throw new HttpException(403, 'Unauthorized.');
         }
 

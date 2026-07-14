@@ -239,6 +239,24 @@ class RoomEntranceTest extends TestCase
         $this->assertNotSame($owner->id, $room->owner);
     }
 
+    public function test_owner_leaving_two_player_game_stops_game_and_reassigns_owner(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, [$other]);
+        $room->status = new RoomStatus(started: true, round: 1, time: '60', term: 'apple', guesses: 0);
+        $room->save();
+
+        app(RoomEntranceServiceInterface::class)->leave($owner, $room);
+
+        $room = $this->reloadRoom($room);
+
+        $this->assertCount(1, $room->users);
+        $this->assertSame($other->id, $room->users->first()->id);
+        $this->assertSame($other->id, $room->owner);
+        $this->assertFalse($room->status->started);
+    }
+
     public function test_last_user_leaving_deletes_room(): void
     {
         $owner = User::factory()->create();

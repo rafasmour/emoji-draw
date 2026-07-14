@@ -94,8 +94,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
         if (count($newUsers) <= 0) {
             if ($room->status->started) {
-                $owner = User::find($room->owner);
-                $this->gameService->stop($owner, $room);
+                $this->gameService->stop($user, $room, systemStop: true);
             }
 
             $room->users = $newUsers;
@@ -109,8 +108,7 @@ class RoomEntranceService implements RoomEntranceServiceInterface
         $room->users = $newUsers;
 
         if ($newUsers->count() === 1 && $room->status->started) {
-            $owner = User::find($room->owner);
-            $this->gameService->stop($owner, $room);
+            $this->gameService->stop($user, $room, systemStop: true);
         }
 
         $message = [
@@ -129,10 +127,6 @@ class RoomEntranceService implements RoomEntranceServiceInterface
 
         broadcast(new Leave($user, $room))->toOthers();
         $this->chatService->broadcastMessage($room, $message);
-        if($newUsers->count() === 1 && $room->status->started)
-        {
-            $this->gameService->stop(User::find($room->owner), $room);
-        }
     }
 
     public function kick(User $owner, Room $room, string $targetUserId): void

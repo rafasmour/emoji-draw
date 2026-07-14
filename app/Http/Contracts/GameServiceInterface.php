@@ -9,7 +9,7 @@ interface GameServiceInterface
 {
     public function start(User $user, Room $room): void;
 
-    public function stop(User $user, Room $room): void;
+    public function stop(User $user, Room $room, bool $systemStop = false): void;
 
     public function finish(Room $room): void;
 
