@@ -11,7 +11,6 @@ import { useSocket } from '@/connection/echo';
 import { cn } from '@/lib/utils';
 import { sendGuess, sendMessage } from '@/requests/room/room';
 import { Room } from '@/types';
-import { configureEcho } from '@laravel/echo-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
 interface RoomChatProps {
@@ -21,11 +20,6 @@ interface RoomChatProps {
     guess?: boolean;
     showForm?: boolean;
 }
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
 
 export function RoomChat({
     roomId,
@@ -114,7 +108,7 @@ export function RoomChat({
                     </div>
                 )}
             </CardContent>
-                <CardFooter className="hidden w-full lg:flex lg:items-center lg:justify-center gap-2 border-t border-border p-0">
+                <CardFooter className="w-full lg:flex lg:items-center lg:justify-center gap-2 border-t border-border p-0">
                     <RoomChatMessageForm
                         value={message}
                         onChange={setMessage}

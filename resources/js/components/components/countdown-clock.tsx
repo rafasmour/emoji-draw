@@ -1,12 +1,6 @@
 import { useSocket } from '@/connection/echo';
-import { configureEcho } from '@laravel/echo-react';
 import { useEffect } from 'react';
 import { useTimer } from 'react-timer-and-stopwatch';
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
 interface CountdownClockProps {
     seconds: number;
     defaultTime: number;

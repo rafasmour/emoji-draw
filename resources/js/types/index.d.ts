@@ -27,6 +27,9 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    roomConnection: {
+        heartbeatIntervalSeconds: number;
+    };
     sidebarOpen: boolean;
     [key: string]: unknown;
 }
@@ -61,8 +64,9 @@ export interface Room {
         message: string;
     }>;
     status: {
+        round: number;
         time: number;
-        term: string;
+        term: string | null;
     };
     canvas: Array<{
         x: number;

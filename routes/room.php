@@ -7,13 +7,17 @@ use App\Http\Controllers\Room\GameActionController;
 use App\Http\Controllers\Room\GameStateController;
 use App\Http\Controllers\Room\GameViewController;
 use App\Http\Controllers\Room\GetRoomsController;
+use App\Http\Controllers\Room\RoomConnectionHeartbeatController;
 use App\Http\Controllers\Room\RoomEntranceController;
 use App\Http\Controllers\Room\RoomLobbyController;
 use App\Http\Controllers\Room\RoomOwnerController;
 use App\Http\Controllers\Room\RoomResultsController;
 use App\Http\Controllers\Room\RoomSettingsController;
 use App\Http\Middleware\EnsureUserInRoom;
+use App\Models\Room;
 use Illuminate\Support\Facades\Route;
+
+Route::bind('room', fn (string $roomId): ?Room => Room::query()->find($roomId));
 
 Route::prefix('room')->middleware('ensure.authenticated')->group(function () {
     Route::get('/', [GetRoomsController::class, 'index'])->name('room.rooms');
@@ -26,6 +30,7 @@ Route::prefix('room')->middleware('ensure.authenticated')->group(function () {
         Route::get('game', [GameViewController::class, 'index'])->name('room.game');
         Route::get('results', [RoomResultsController::class, 'index'])->name('room.results');
         Route::post('leave', [RoomEntranceController::class, 'leave'])->name('room.leave');
+        Route::post('connection/heartbeat', [RoomConnectionHeartbeatController::class, 'store'])->name('room.connection.heartbeat');
         Route::get('messages', [ChatController::class, 'getMessages'])->name('room.messages');
         Route::post('messages', [ChatController::class, 'sendMessage'])->name('room.send.message');
         Route::get('settings', [RoomSettingsController::class, 'settings'])->name('room.settings');

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Contracts\RoomServiceInterface;
+use App\Models\Room;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +22,12 @@ class EnsureUserInRoom
     public function handle(Request $request, Closure $next): Response
     {
         $room = $request->route('room');
-        if (! $this->roomService->userInRoom($request->user()->getKey(), $room)) {
+
+        if (! $room instanceof Room || ! $this->roomService->userInRoom($request->user()->getKey(), $room)) {
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('room.rooms')]);
+            }
+
             return redirect()->route('room.rooms');
         }
 

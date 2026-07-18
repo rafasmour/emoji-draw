@@ -9,6 +9,8 @@ const api = axios.create({
     headers: { Accept: 'application/json' },
 });
 
+const leavingRoomIds = new Set<string>();
+
 const getCsrfToken = (): string =>
     decodeURIComponent(
         document.cookie
@@ -20,11 +22,8 @@ const getCsrfToken = (): string =>
 const navigate = (url: string) => router.visit(url);
 
 const handleError = (error: unknown) => {
-    if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message ?? 'Something went wrong.');
-    } else {
-        toast.error('Something went wrong.');
-    }
+    
+   toast.error(error.response?.data?.message ?? 'Something went wrong.');
 };
 
 export const leaveRoom = async (
@@ -32,6 +31,13 @@ export const leaveRoom = async (
     options: { shouldRedirect?: boolean; useBeacon?: boolean } = {},
 ) => {
     const { shouldRedirect = true, useBeacon = false } = options;
+
+    if (leavingRoomIds.has(roomId)) {
+        return;
+    }
+
+    leavingRoomIds.add(roomId);
+
     try {
         if (useBeacon) {
             const url = `/room/${roomId}/leave`;
@@ -46,6 +52,7 @@ export const leaveRoom = async (
             navigate(res.data.redirect);
         }
     } catch (error) {
+        leavingRoomIds.delete(roomId);
         handleError(error);
     }
 };
@@ -115,4 +122,13 @@ export const sendStroke = async (roomId: string, stroke: Room['canvas'][number])
     } catch (error) {
         handleError(error);
     }
+};
+
+export const sendRoomConnectionHeartbeat = async (
+    roomId: string,
+    tabId: string,
+) => {
+    return api.post(`/room/${roomId}/connection/heartbeat`, {
+        tab_id: tabId,
+    });
 };
