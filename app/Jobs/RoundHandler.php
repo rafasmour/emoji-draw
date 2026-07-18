@@ -15,6 +15,7 @@ class RoundHandler implements ShouldQueue
     public function __construct(
         private Room $room,
         private int $forRound = -1,
+        private ?string $forRoundEndsAt = null,
     ) {}
 
     public function handle(GameServiceInterface $gameService): void
@@ -23,7 +24,9 @@ class RoundHandler implements ShouldQueue
         $currentRound = $this->room->status->round;
         $roomSettings = $this->room->settings;
 
-        if ($this->forRound >= 0 && $currentRound !== $this->forRound) {
+        if (! $this->room->status->started
+            || ($this->forRound >= 0 && $currentRound !== $this->forRound)
+            || ($this->forRoundEndsAt !== null && $this->room->status->time !== $this->forRoundEndsAt)) {
             $this->delete();
 
             return;
@@ -34,7 +37,11 @@ class RoundHandler implements ShouldQueue
             $this->delete();
         } else {
             $gameService->changeRound($this->room);
-            RoundHandler::dispatch($this->room)->delay(now()->addSeconds($roomSettings->timeLimit));
+            RoundHandler::dispatch(
+                $this->room,
+                $this->room->status->round,
+                $this->room->status->time,
+            )->delay(now()->addSeconds($roomSettings->timeLimit));
         }
     }
 }

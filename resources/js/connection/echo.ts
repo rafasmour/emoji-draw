@@ -10,7 +10,6 @@ export const useSocket = <E extends EventName>(
         channel,
         eventNames,
         (payload: EventPayload<E>) => {
-            console.log(`[ws] ${channel} / ${Array.isArray(eventNames) ? eventNames.join(',') : eventNames}`, payload);
             callback(payload);
         },
     )

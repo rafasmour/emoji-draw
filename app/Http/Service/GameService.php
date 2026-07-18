@@ -72,7 +72,11 @@ class GameService implements GameServiceInterface
         );
         $room->save();
 
-        RoundHandler::dispatch($room, $room->status->round)->delay(now()->addSeconds($roomSettings->timeLimit));
+        RoundHandler::dispatch(
+            $room,
+            $room->status->round,
+            $room->status->time,
+        )->delay(now()->addSeconds($roomSettings->timeLimit));
         broadcast(new StartGame($room));
         $this->broadcastRoundStarted($room);
         HintHandler::dispatch($room, $room->status->round)

@@ -151,7 +151,11 @@ class GameActionService implements GameActionServiceInterface
         if ($correct) {
             $nonArtistUsers = $room->users->filter(fn (RoomUser $u) => $u->id !== $room->artist);
             if ($nonArtistUsers->every(fn (RoomUser $u) => $u->guessed)) {
-                RoundHandler::dispatch($room, $room->status->round);
+                RoundHandler::dispatch(
+                    $room,
+                    $room->status->round,
+                    $room->status->time,
+                );
             }
         }
     }

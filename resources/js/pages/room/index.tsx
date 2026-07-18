@@ -23,7 +23,7 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, DoorOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, DoorOpen, Plus } from 'lucide-react';
 import * as React from 'react';
 import { createRoom } from '@/lib/utils';
 
@@ -37,6 +37,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 type RoomIndexPageProps = SharedData & {
     rooms: PaginatedResponse<RoomIndexRow>;
 };
+
+const generateRoomName = (): string =>
+    crypto.randomUUID().replaceAll('-', '').slice(0, 10);
 
 const columns: ColumnDef<RoomIndexRow>[] = [
     {
@@ -68,6 +71,9 @@ const columns: ColumnDef<RoomIndexRow>[] = [
 
 export default function RoomIndex() {
     const { rooms } = usePage<RoomIndexPageProps>().props;
+    const createRoom = React.useCallback(() => {
+        router.post('/room/create', { name: generateRoomName() });
+    }, []);
     const pagination = React.useMemo(
         () => ({
             pageIndex: Math.max(rooms.current_page - 1, 0),
@@ -137,9 +143,15 @@ export default function RoomIndex() {
                                     into a lobby.
                                 </p>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                                {rooms.total} public room
-                                {rooms.total === 1 ? '' : 's'}
+                            <div className="flex items-center gap-3">
+                                <div className="text-sm text-muted-foreground">
+                                    {rooms.total} public room
+                                    {rooms.total === 1 ? '' : 's'}
+                                </div>
+                                <Button onClick={createRoom}>
+                                    <Plus />
+                                    Create room
+                                </Button>
                             </div>
                         </div>
                     </div>
