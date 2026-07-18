@@ -7,7 +7,7 @@ import { destroyRoom, leaveRoom, startGame } from '@/requests/room/room';
 import { dashboard } from '@/routes';
 import { Room } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { configureEcho, useEcho } from '@laravel/echo-react';
+import { configureEcho } from '@laravel/echo-react';
 import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -26,7 +26,6 @@ export default function Lobby() {
         `room.${room.id}`,
         'ChangeOwner',
         (e) => {
-            console.log(e);
             setRoom((prev) => ({
                 ...prev,
                 owner: e.new_owner_id,
@@ -55,11 +54,6 @@ export default function Lobby() {
         listenChangeOwner();
         listenRoomDestroyed();
     });
-
-    useEffect(() => {
-        const owner = room.users.find((user) => user.id === room.owner);
-        console.log(owner?.name);
-    }, [room]);
 
     return (
         <>
