@@ -2,37 +2,41 @@ import { RoomCanvas } from '@/components/room/room-canvas';
 import { RoomChat } from '@/components/room/room-chat';
 import { RoomUsers } from '@/components/room/room-users';
 import { useSocket } from '@/connection/echo';
+import { useRoomConnectionLease } from '@/hooks/use-room-connection-lease';
 import { useRoomLeave } from '@/hooks/use-room-leave';
-import { dashboard } from '@/routes';
+import { rooms } from '@/routes/room/';
 import { Room, SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { configureEcho } from '@laravel/echo-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
-
 export default function Game() {
-    const props = usePage<SharedData & { room: Room }>().props;
+    const props = usePage<SharedData & { room: Room; is_artist: boolean }>()
+        .props;
     const defaultRoom: Room = props.room as Room;
     const currentUser = props.auth.user!;
     const currentUserId = String(currentUser.id);
     const [room] = useState<Room>(defaultRoom);
     const [owner, setOwner] = useState<string>(room.owner);
     const [artist, setArtist] = useState<string>(room.artist);
-    const [isArtist, setIsArtist] = useState<boolean>(
-        room.artist === currentUserId,
+    const [isArtist, setIsArtist] = useState<boolean>(props.is_artist);
+    const currentRound = useRef<number>(room.status.round);
+    const assignedTerm = useRef<{ round: number; term: string } | null>(
+        room.status.term === null
+            ? null
+            : { round: room.status.round, term: room.status.term },
     );
     useRoomLeave(room.id);
+    useRoomConnectionLease(
+        room.id,
+        props.roomConnection.heartbeatIntervalSeconds,
+    );
 
     useEffect(() => {
         setIsArtist(() => artist === currentUserId);
     }, [artist, currentUserId]);
 
-    const [term, setTerm] = useState<string>(room.status.term);
+    const [term, setTerm] = useState<string>(room.status.term ?? '');
     const [hint, setHint] = useState<string>('');
     const { listen: listenChangeOwner } = useSocket(
         `room.${room.id}`,
@@ -43,9 +47,26 @@ export default function Game() {
         `room.${room.id}`,
         'StartRound',
         (e) => {
-            setTerm(e.term ?? '');
+            currentRound.current = e.round;
+            setTerm(
+                assignedTerm.current?.round === e.round
+                    ? assignedTerm.current.term
+                    : '',
+            );
             setArtist(e.artist_id);
             setHint(e.initial_hint);
+        },
+    );
+    const { listen: listenArtistTermAssigned } = useSocket(
+        `room.${room.id}.user.${currentUserId}`,
+        'ArtistTermAssigned',
+        (e) => {
+            if (e.round < currentRound.current) {
+                return;
+            }
+
+            assignedTerm.current = { round: e.round, term: e.term };
+            setTerm(e.term);
         },
     );
     const { listen: listenRevealHint } = useSocket(
@@ -60,13 +81,18 @@ export default function Game() {
         'GameOver',
         () => router.visit(`/room/${room.id}/results`),
     );
+    const { listen: listenStopGame } = useSocket(
+        `room.${room.id}`,
+        'StopGame',
+        () => router.visit(`/room/${room.id}`),
+    );
     const { listen: listenRoomDestroyed } = useSocket(
         `room.${room.id}`,
         'RoomDestroyed',
         () => {
             toast.error('Room was destroyed.');
             setTimeout(() => {
-                window.location.href = dashboard().url;
+                window.location.href = rooms().url;
             }, 1200);
         },
     );
@@ -74,15 +100,19 @@ export default function Game() {
     useEffect(() => {
         listenChangeOwner();
         listenStartRound();
+        listenArtistTermAssigned();
         listenRevealHint();
         listenGameOver();
+        listenStopGame();
         listenRoomDestroyed();
     }, [
         listenChangeOwner,
+        listenArtistTermAssigned,
         listenGameOver,
         listenRevealHint,
         listenRoomDestroyed,
         listenStartRound,
+        listenStopGame,
     ]);
 
     const users = room.users;

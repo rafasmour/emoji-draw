@@ -181,6 +181,49 @@ class RoomEntranceTest extends TestCase
         $this->assertEquals($owner->id, $room->users->first()->id);
     }
 
+    public function test_leave_endpoint_returns_json_redirect_for_json_requests(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, [$other]);
+
+        $response = $this
+            ->actingAs($other)
+            ->postJson(route('room.leave', $room));
+
+        $response
+            ->assertOk()
+            ->assertJson([
+                'redirect' => route('room.rooms'),
+            ]);
+
+        $room = $this->reloadRoom($room);
+
+        $this->assertFalse($room->users->contains('id', $other->id));
+    }
+
+    public function test_second_leave_request_after_room_deletion_returns_json_redirect(): void
+    {
+        $owner = User::factory()->create();
+        $room = $this->makeRoom($owner);
+
+        $this
+            ->actingAs($owner)
+            ->postJson(route('room.leave', $room))
+            ->assertOk()
+            ->assertJson([
+                'redirect' => route('room.rooms'),
+            ]);
+
+        $this
+            ->actingAs($owner)
+            ->postJson("/room/{$room->id}/leave")
+            ->assertOk()
+            ->assertJson([
+                'redirect' => route('room.rooms'),
+            ]);
+    }
+
     public function test_owner_leaving_reassigns_the_room_owner(): void
     {
         $owner = User::factory()->create();
@@ -194,6 +237,24 @@ class RoomEntranceTest extends TestCase
 
         $this->assertContains($room->owner, [$other->id, $third->id]);
         $this->assertNotSame($owner->id, $room->owner);
+    }
+
+    public function test_owner_leaving_two_player_game_stops_game_and_reassigns_owner(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, [$other]);
+        $room->status = new RoomStatus(started: true, round: 1, time: '60', term: 'apple', guesses: 0);
+        $room->save();
+
+        app(RoomEntranceServiceInterface::class)->leave($owner, $room);
+
+        $room = $this->reloadRoom($room);
+
+        $this->assertCount(1, $room->users);
+        $this->assertSame($other->id, $room->users->first()->id);
+        $this->assertSame($other->id, $room->owner);
+        $this->assertFalse($room->status->started);
     }
 
     public function test_last_user_leaving_deletes_room(): void

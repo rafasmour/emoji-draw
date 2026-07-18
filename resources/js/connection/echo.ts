@@ -1,10 +1,5 @@
-import { configureEcho, useEcho } from '@laravel/echo-react';
+import { useEcho } from '@laravel/echo-react';
 import { EventName, EventPayload } from '@/types/events';
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-})
 
 export const useSocket = <E extends EventName>(
     channel: string,

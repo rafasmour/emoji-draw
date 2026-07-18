@@ -97,6 +97,13 @@ return [
             'lock_collection' => env('DB_CACHE_LOCK_TABLE', 'cache_locks'),
         ],
 
+        'mongodb_room_leases' => [
+            'driver' => 'mongodb',
+            'connection' => env('DB_CACHE_CONNECTION', 'mongodb'),
+            'collection' => env('ROOM_LEASE_CACHE_TABLE', 'room_leases'),
+            'lock_collection' => env('DB_CACHE_LOCK_TABLE', 'cache_locks'),
+        ],
+
     ],
 
     /*

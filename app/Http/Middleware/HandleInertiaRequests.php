@@ -45,6 +45,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => fn () => [
                 'user' => $request->user(),
             ],
+            'roomConnection' => [
+                'heartbeatIntervalSeconds' => (int) config('room.heartbeat_interval_seconds'),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

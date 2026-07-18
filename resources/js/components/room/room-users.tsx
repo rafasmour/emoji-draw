@@ -18,7 +18,6 @@ import { useSocket } from '@/connection/echo';
 import { cn } from '@/lib/utils';
 import { changeOwner, kickPlayer } from '@/requests/room/room';
 import { Room } from '@/types';
-import { configureEcho } from '@laravel/echo-react';
 import { CircleX, CrownIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -32,11 +31,6 @@ export interface RoomUsersProps {
     currentUserId: string;
     showScore?: boolean;
 }
-
-configureEcho({
-    broadcaster: 'reverb',
-    wssPort: 443,
-});
 
 export function RoomUsers({
     roomId,
