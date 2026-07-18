@@ -310,6 +310,46 @@ class GameStateTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_round_handler_does_not_advance_a_stopped_game(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->createGameRoom(
+            $owner,
+            [$other],
+            new RoomStatus(started: false, round: 0, time: '0', term: '', guesses: 0),
+        );
+
+        $job = new RoundHandler($room, forRound: 0, forRoundEndsAt: '2026-01-01 00:01:00');
+        $job->handle(app(GameServiceInterface::class));
+
+        $room = $this->reloadRoom($room);
+        $this->assertFalse($room->status->started);
+        $this->assertSame(0, $room->status->round);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_round_handler_does_not_advance_a_new_game_with_a_different_deadline(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->createGameRoom(
+            $owner,
+            [$other],
+            new RoomStatus(started: true, round: 0, time: '2026-01-01 00:02:00', term: 'apple', guesses: 0),
+        );
+
+        $job = new RoundHandler($room, forRound: 0, forRoundEndsAt: '2026-01-01 00:01:00');
+        $job->handle(app(GameServiceInterface::class));
+
+        $room = $this->reloadRoom($room);
+        $this->assertTrue($room->status->started);
+        $this->assertSame(0, $room->status->round);
+        Queue::assertNothingPushed();
+    }
+
     public function test_stop_round_broadcasts_on_room_private_channel(): void
     {
         $owner = User::factory()->create();
