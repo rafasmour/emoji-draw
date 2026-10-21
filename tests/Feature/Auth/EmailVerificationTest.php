@@ -38,7 +38,7 @@ class EmailVerificationTest extends TestCase
 
         Event::assertDispatched(Verified::class);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+        $response->assertRedirect(route('room.rooms', absolute: false).'?verified=1');
     }
 
     public function test_email_is_not_verified_with_invalid_hash()
@@ -73,7 +73,7 @@ class EmailVerificationTest extends TestCase
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
 
-    public function test_verified_user_is_redirected_to_dashboard_from_verification_prompt(): void
+    public function test_verified_user_is_redirected_to_rooms_from_verification_prompt(): void
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
