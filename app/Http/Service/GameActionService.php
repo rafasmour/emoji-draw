@@ -12,6 +12,7 @@ use App\Jobs\RoundHandler;
 use App\Models\Room;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class GameActionService implements GameActionServiceInterface
@@ -55,7 +56,8 @@ class GameActionService implements GameActionServiceInterface
             throw new HttpException(403, 'Already guessed.');
         }
 
-        $correct = $guess === $room->status->term;
+        $term = $this->normalizeGuess($room->status->term);
+        $correct = $term !== '' && $this->normalizeGuess($guess) === $term;
         $guesserScore = 0;
         $artistScore = 0;
         $isFirstGuess = false;
@@ -146,9 +148,9 @@ class GameActionService implements GameActionServiceInterface
 
         $room->save();
 
-        broadcast(new CorrectGuess($user, $room, $guesserScore, $artistScore, $isFirstGuess));
-
         if ($correct) {
+            broadcast(new CorrectGuess($user, $room, $guesserScore, $artistScore, $isFirstGuess));
+
             $nonArtistUsers = $room->users->filter(fn (RoomUser $u) => $u->id !== $room->artist);
             if ($nonArtistUsers->every(fn (RoomUser $u) => $u->guessed)) {
                 RoundHandler::dispatch(
@@ -158,5 +160,10 @@ class GameActionService implements GameActionServiceInterface
                 );
             }
         }
+    }
+
+    private function normalizeGuess(string $value): string
+    {
+        return Str::of($value)->squish()->lower()->value();
     }
 }
