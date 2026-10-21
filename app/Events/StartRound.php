@@ -28,13 +28,17 @@ class StartRound implements ShouldBroadcastNow
 
     public string $initial_hint;
 
+    public ?string $previous_term;
+
     public function __construct(
         private Room $room,
+        ?string $previousTerm = null,
     ) {
         $this->artist_id = $room->artist;
         $this->time = now()->diffInSeconds($room->status->time);
         $this->round = $room->status->round;
         $this->initial_hint = $this->buildHint($room->status->term, 0);
+        $this->previous_term = $previousTerm;
     }
 
     /**
