@@ -82,6 +82,7 @@ class ArtistTermSecurityTest extends TestCase
         $this->assertSame($room->artist, $event->artist_id);
         $this->assertSame(1, $event->round);
         $this->assertSame('_ _ _ _ _ _ _', $event->initial_hint);
+        $this->assertNull($event->previous_term);
     }
 
     public function test_artist_term_broadcasts_only_on_artist_user_room_channel(): void
