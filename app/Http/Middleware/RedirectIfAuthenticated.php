@@ -26,7 +26,7 @@ class RedirectIfAuthenticated
 
     protected function defaultRedirectUri(): string
     {
-        foreach (['dashboard', 'home'] as $route) {
+        foreach (['room.rooms', 'home'] as $route) {
             if (Route::has($route)) {
                 return route($route);
             }
