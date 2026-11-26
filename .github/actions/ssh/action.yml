@@ -1,0 +1,27 @@
+name: "Setup SSH Key"
+description: "Sets up SSH key for the runner."
+author: "rafasmour"
+inputs:
+  host:
+    description: "The host to add to known_hosts."
+    required: true
+  DEPLOY_SSH_KEY:
+    description: "The SSH private key to use for deployment."
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup SSH Key
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.DEPLOY_SSH_KEY }}
+        HOST: ${{ inputs.host }}
+      shell: alpine.sh --root {0}
+      run: |
+        mkdir -p /home/runner/.ssh
+        apk update
+        echo "$SSH_PRIVATE_KEY" > /home/runner/.ssh/id_rsa
+        chmod 600 /home/runner/.ssh/id_rsa
+        touch /home/runner/.ssh/known_hosts
+        chmod 644 /home/runner/.ssh/known_hosts
+        ssh-keyscan -H $HOST >> /home/runner/.ssh/known_hosts

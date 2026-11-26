@@ -5,7 +5,7 @@ import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 import * as fs from 'node:fs';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
     plugins: [
         laravel({
             hotFile: 'public/hot',
@@ -32,7 +32,8 @@ export default defineConfig({
             },
         },
     ],
-    base: '/vite',
+    // dev server is proxied under /vite; production builds use laravel-vite-plugin's /build/
+    base: command === 'serve' ? '/vite' : undefined,
     server: {
         cors: true,
         host: '0.0.0.0',
@@ -47,4 +48,4 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
-});
+}));
