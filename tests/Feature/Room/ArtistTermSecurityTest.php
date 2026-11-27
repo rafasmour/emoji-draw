@@ -34,6 +34,19 @@ class ArtistTermSecurityTest extends TestCase
         parent::tearDown();
     }
 
+    /** The log broadcaster authorizes every channel; switch to reverb so channel callbacks run. */
+    private function useAuthorizingBroadcaster(): void
+    {
+        config([
+            'broadcasting.default' => 'reverb',
+            'broadcasting.connections.reverb.key' => 'test-key',
+            'broadcasting.connections.reverb.secret' => 'test-secret',
+            'broadcasting.connections.reverb.app_id' => 'test-app',
+        ]);
+
+        require base_path('routes/channels.php');
+    }
+
     private function makeRoom(User $owner, User $other, bool $started = true): Room
     {
         return Room::create([
@@ -90,6 +103,7 @@ class ArtistTermSecurityTest extends TestCase
         $owner = User::factory()->create();
         $other = User::factory()->create();
         $room = $this->makeRoom($owner, $other);
+        $this->useAuthorizingBroadcaster();
 
         $this->actingAs($owner)
             ->postJson('/broadcasting/auth', [
