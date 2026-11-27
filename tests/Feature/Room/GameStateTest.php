@@ -4,6 +4,7 @@ namespace Tests\Feature\Room;
 
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
+use App\Events\CorrectGuess;
 use App\Events\StopRound;
 use App\Http\Contracts\GameActionServiceInterface;
 use App\Http\Contracts\GameServiceInterface;
@@ -13,6 +14,7 @@ use App\Models\Term;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
@@ -206,6 +208,39 @@ class GameStateTest extends TestCase
         $this->assertSame('wrong', $room->chat->last()->message);
 
         Queue::assertNothingPushed();
+    }
+
+    public function test_guess_matching_ignores_case_and_surrounding_or_repeated_whitespace(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $guesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$guesser], new RoomStatus(
+            started: true,
+            round: 1,
+            time: Carbon::now()->addSeconds(60)->toDateTimeString('second'),
+            term: 'walk the dog',
+            guesses: 0,
+        ));
+
+        app(GameActionServiceInterface::class)->handleGuess($guesser, $room, '  Walk  THE dog ');
+
+        $room = $this->reloadRoom($room);
+        $this->assertTrue($room->users->firstWhere('id', $guesser->id)->guessed);
+        $this->assertSame('Guessed Correctly!', $room->chat->last()->message);
+    }
+
+    public function test_incorrect_guess_does_not_broadcast_correct_guess(): void
+    {
+        Queue::fake();
+        Event::fake([CorrectGuess::class]);
+        $owner = User::factory()->create();
+        $guesser = User::factory()->create();
+        $room = $this->createGameRoom($owner, [$guesser]);
+
+        app(GameActionServiceInterface::class)->handleGuess($guesser, $room, 'wrong');
+
+        Event::assertNotDispatched(CorrectGuess::class);
     }
 
     public function test_second_correct_guesser_does_not_get_first_guess_bonus(): void

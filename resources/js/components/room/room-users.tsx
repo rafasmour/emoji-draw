@@ -75,8 +75,6 @@ export function RoomUsers({
         `room.${roomId}`,
         'CorrectGuess',
         (e) => {
-            if (e.guesser_score === 0) return;
-
             setUsers((prev) =>
                 prev.map((u) => {
                     const updated = e.users.find((eu) => eu.id === u.id);
