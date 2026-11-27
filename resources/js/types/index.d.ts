@@ -79,6 +79,7 @@ export interface Room {
         password: string;
         public: boolean;
         timeLimit: number;
+        rounds: number;
         [key: string]: unknown;
     };
     owner: string;

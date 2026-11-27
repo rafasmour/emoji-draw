@@ -170,6 +170,7 @@ class GameService implements GameServiceInterface
     public function changeRound(Room $room): void
     {
         $roomSettings = $room->settings;
+        $previousTerm = $room->status->term;
         $term = $this->randomTerm();
         $room->status = new RoomStatus(
             started: $room->status->started,
@@ -208,7 +209,7 @@ class GameService implements GameServiceInterface
         $room->chat = $chat;
         $room->save();
 
-        $this->broadcastRoundStarted($room);
+        $this->broadcastRoundStarted($room, $previousTerm);
         $this->chatService->broadcastMessage($room, $message);
         broadcast(new ClearCanvas($room));
 
@@ -216,9 +217,9 @@ class GameService implements GameServiceInterface
             ->delay(now()->addSeconds(HintHandler::HINT_INTERVAL_SECONDS));
     }
 
-    private function broadcastRoundStarted(Room $room): void
+    private function broadcastRoundStarted(Room $room, ?string $previousTerm = null): void
     {
-        broadcast(new StartRound($room));
+        broadcast(new StartRound($room, $previousTerm));
         broadcast(new ArtistTermAssigned($room));
     }
 }

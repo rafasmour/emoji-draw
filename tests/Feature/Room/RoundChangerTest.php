@@ -5,10 +5,13 @@ namespace Tests\Feature\Room;
 use App\DataObjects\RoomSettings;
 use App\DataObjects\RoomStatus;
 use App\DataObjects\RoomUser;
+use App\Events\StartRound;
 use App\Http\Contracts\GameServiceInterface;
 use App\Models\Room;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class RoundChangerTest extends TestCase
@@ -95,6 +98,19 @@ class RoundChangerTest extends TestCase
 
         $room->refresh();
         $this->assertEquals($other->id, $room->artist);
+    }
+
+    public function test_round_change_reveals_previous_term_in_start_round(): void
+    {
+        Queue::fake();
+        Event::fake([StartRound::class]);
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $room = $this->makeRoom($owner, $other);
+
+        app(GameServiceInterface::class)->changeRound($room);
+
+        Event::assertDispatched(StartRound::class, fn (StartRound $event) => $event->previous_term === 'test');
     }
 
     public function test_round_change_sets_term_from_database(): void

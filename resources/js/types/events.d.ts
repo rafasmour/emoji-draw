@@ -88,6 +88,7 @@ export interface EventPayloads {
         time: string;
         round: number;
         initial_hint: string;
+        previous_term: string | null;
     };
     StopGame: {
         event: 'StopGame';
