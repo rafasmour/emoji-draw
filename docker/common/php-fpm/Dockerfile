@@ -55,8 +55,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
     && composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
 
-# Stage 2: Production environment
-FROM php:8.4-fpm AS production
+# Stage 2: Runtime environment shared by production and development
+FROM php:8.4-fpm AS runtime
 
 # Install only runtime libraries needed in production
 # libfcgi-bin and procps are required for the php-fpm-healthcheck script
@@ -119,8 +119,52 @@ EXPOSE 9000
 CMD ["php-fpm"]
 
 
-# Stage 3: Development image
-FROM production AS development
+# Stage 3: Frontend assets
+# -----------------------------------------------------------
+# Built on top of the builder stage because the Wayfinder Vite
+# plugin runs `php artisan wayfinder:generate` during the build.
+# VITE_* values are baked into the bundle, so they come in as
+# build args.
+# -----------------------------------------------------------
+FROM builder AS assets
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ARG VITE_APP_NAME
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT=443
+ARG VITE_REVERB_SCHEME=https
+ENV VITE_APP_NAME=${VITE_APP_NAME} \
+    VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY} \
+    VITE_REVERB_HOST=${VITE_REVERB_HOST} \
+    VITE_REVERB_PORT=${VITE_REVERB_PORT} \
+    VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
+
+RUN npm ci --legacy-peer-deps && npm run build
+
+
+# Stage 4: Production image (php-fpm, reverb, queue, scheduler)
+FROM runtime AS production
+
+COPY --from=assets --chown=www-data:www-data /var/www/public/build /var/www/public/build
+
+
+# Stage 5: Nginx serving the public directory
+FROM nginx:alpine AS nginx
+
+COPY ./docker/production/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=assets /var/www/public /var/www/public
+
+WORKDIR /var/www/public
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+
+# Stage 6: Development image
+FROM runtime AS development
 
 # Use ARG to define environment variables passed from the Docker build command or Docker Compose.
 ARG XDEBUG_ENABLED=true

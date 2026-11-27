@@ -1,0 +1,109 @@
+name: deploy
+
+"on":
+  workflow_dispatch:
+  # deploy main only after the test suite has passed on it
+  workflow_run:
+    workflows:
+      - tests
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Alpine
+        uses: jirutka/setup-alpine@v1
+        with:
+          branch: "v3.19"
+          packages: >
+            openssh
+
+      - uses: ./.github/actions/ssh
+        with:
+          host: ${{ secrets.VPS_IP }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Write production .env
+        env:
+          DOMAIN: ${{ vars.DOMAIN }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          REVERB_APP_ID: ${{ secrets.REVERB_APP_ID }}
+          REVERB_APP_KEY: ${{ secrets.REVERB_APP_KEY }}
+          REVERB_APP_SECRET: ${{ secrets.REVERB_APP_SECRET }}
+        shell: bash
+        run: |
+          umask 077
+          cat > production.env <<EOF
+          DOMAIN=${DOMAIN}
+          APP_NAME="Emoji Draw"
+          APP_ENV=production
+          APP_KEY=${APP_KEY}
+          APP_DEBUG=false
+          APP_URL=https://emoji-draw.${DOMAIN}
+          LOG_CHANNEL=stderr
+          LOG_LEVEL=warning
+          DB_CONNECTION=mongodb
+          DB_DATABASE=emoji_draw
+          DB_USERNAME=emoji_draw
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_ROOT_USERNAME=root
+          DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+          DB_ROOT_DATABASE=admin
+          DB_URI=mongodb://emoji_draw:${DB_PASSWORD}@mongodb:27017/emoji_draw?authSource=emoji_draw
+          SESSION_DRIVER=database
+          SESSION_SECURE_COOKIE=true
+          CACHE_STORE=mongodb
+          QUEUE_CONNECTION=mongodb
+          BROADCAST_CONNECTION=reverb
+          FILESYSTEM_DISK=local
+          MAIL_MAILER=log
+          REVERB_APP_ID=${REVERB_APP_ID}
+          REVERB_APP_KEY=${REVERB_APP_KEY}
+          REVERB_APP_SECRET=${REVERB_APP_SECRET}
+          REVERB_HOST=emoji-draw.${DOMAIN}
+          REVERB_PORT=443
+          REVERB_SCHEME=https
+          REVERB_INTERNAL_HOST=reverb
+          REVERB_INTERNAL_PORT=8080
+          REVERB_INTERNAL_SCHEME=http
+          EOF
+
+      - name: Cache ssh key passphrase & Run Deployment
+        env:
+          SSH_PASSPHRASE: ${{ secrets.DEPLOY_SSH_PASSPHRASE }}
+          USER: ${{ secrets.USER }}
+          VPS_IP: ${{ secrets.VPS_IP }}
+        shell: alpine.sh --root {0}
+        run: |
+          eval "$(ssh-agent -s)"
+          echo -e '#!/bin/sh\necho "$SSH_PASSPHRASE"' > ./askpass.sh
+          chmod +x ./askpass.sh
+          export SSH_ASKPASS=./askpass.sh
+          export DISPLAY=:0
+          setsid ssh-add /home/runner/.ssh/id_rsa < /dev/null
+          ssh -o StrictHostKeyChecking=no ${USER}@${VPS_IP} 'umask 077 && cat > ~/emoji-draw.env' < production.env
+          ssh -o StrictHostKeyChecking=no ${USER}@${VPS_IP} bash -s << 'EOF'
+          set -ex
+          cd ~
+          if [ ! -d emoji-draw ]; then
+            git clone https://github.com/rafasmour/emoji-draw.git
+          fi
+          cd emoji-draw
+          git pull --ff-only
+          mv ~/emoji-draw.env .env
+          docker compose -f docker-compose.prod.yml up -d --build --remove-orphans --wait --wait-timeout 300
+          # TermSeeder isn't idempotent, so only seed an empty terms collection
+          terms=$(docker compose -f docker-compose.prod.yml exec -T php-fpm php artisan tinker --execute='echo App\Models\Term::count();' | tail -n 1)
+          if [ "$terms" = "0" ]; then
+            docker compose -f docker-compose.prod.yml exec -T php-fpm php artisan db:seed --class=TermSeeder --force
+          fi
+          docker image prune -f
+          EOF

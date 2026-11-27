@@ -1,8 +1,28 @@
-x-php-build: &php-build
+# Production stack, served by the shared Traefik instance on the external
+# `webgateway` network at https://emoji-draw.${DOMAIN}.
+# Only `web` and `reverb` join `webgateway`; everything else stays on the
+# project's private network.
+
+x-build-args: &build-args
+  VITE_APP_NAME: ${APP_NAME:-Emoji Draw}
+  VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:?set REVERB_APP_KEY in .env}
+  VITE_REVERB_HOST: emoji-draw.${DOMAIN:?set DOMAIN in .env}
+  VITE_REVERB_PORT: "443"
+  VITE_REVERB_SCHEME: https
+
+x-php: &php
   build:
     context: .
     dockerfile: ./docker/common/php-fpm/Dockerfile
     target: production
+    args: *build-args
+  restart: unless-stopped
+  env_file:
+    - .env
+  environment:
+    RUN_MIGRATIONS: "false"
+  networks:
+    - default
   depends_on:
     mongodb:
       condition: service_healthy
@@ -11,90 +31,83 @@ services:
   web:
     build:
       context: .
-      dockerfile: ./docker/production/nginx/Dockerfile
+      dockerfile: ./docker/common/php-fpm/Dockerfile
+      target: nginx
+      args: *build-args
     restart: unless-stopped
     volumes:
       - laravel-storage-production:/var/www/storage:ro
-      - laravel-public-assets:/var/www/public/build:ro
     networks:
+      - default
       - webgateway
-    ports:
-      - "${NGINX_PORT:-80}:80"
     labels:
       - traefik.enable=true
-      - traefik.http.routers.web.rule=Host(`emoji-draw.${DOMAIN}`)
-      - traefik.http.routers.web.entrypoints=websecure
-      - traefik.http.routers.web.tls=true
-      - traefik.http.routers.web.priority=1
+      - traefik.docker.network=webgateway
+      - traefik.http.routers.emoji-draw-web.rule=Host(`emoji-draw.${DOMAIN}`)
+      - traefik.http.routers.emoji-draw-web.entrypoints=websecure
+      - traefik.http.routers.emoji-draw-web.tls=true
+      - traefik.http.routers.emoji-draw-web.tls.certresolver=myresolver
+      - traefik.http.routers.emoji-draw-web.priority=1
+      - traefik.http.routers.emoji-draw-web.service=emoji-draw-web
+      - traefik.http.services.emoji-draw-web.loadbalancer.server.port=80
     depends_on:
       php-fpm:
         condition: service_healthy
 
   php-fpm:
-    <<: *php-build
-    restart: unless-stopped
+    <<: *php
+    environment:
+      RUN_MIGRATIONS: "true"
     volumes:
-      - laravel-public-assets:/var/www/public/build
       - laravel-storage-production:/var/www/storage
-    env_file:
-      - .env
     networks:
-      - webgateway
+      default:
+        aliases:
+          - emoji-draw-php
     healthcheck:
       test: ["CMD-SHELL", "php-fpm-healthcheck || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 30s
 
   reverb:
-    <<: *php-build
-    restart: unless-stopped
+    <<: *php
     command: php artisan reverb:start
-    env_file:
-      - .env
-    ports:
-      - "8080"
     networks:
+      - default
       - webgateway
     labels:
       - traefik.enable=true
-      - traefik.http.routers.reverb.rule=Host(`emoji-draw.${DOMAIN}`) && PathPrefix(`/app`)
-      - traefik.http.routers.reverb.priority=10
-      - traefik.http.routers.reverb.entrypoints=websecure
-      - traefik.http.routers.reverb.tls=true
-      - traefik.http.services.reverb.loadbalancer.server.port=8080
       - traefik.docker.network=webgateway
-    depends_on:
-      mongodb:
-        condition: service_healthy
+      - traefik.http.routers.emoji-draw-reverb.rule=Host(`emoji-draw.${DOMAIN}`) && PathPrefix(`/app`)
+      - traefik.http.routers.emoji-draw-reverb.priority=10
+      - traefik.http.routers.emoji-draw-reverb.entrypoints=websecure
+      - traefik.http.routers.emoji-draw-reverb.tls=true
+      - traefik.http.routers.emoji-draw-reverb.tls.certresolver=myresolver
+      - traefik.http.routers.emoji-draw-reverb.service=emoji-draw-reverb
+      - traefik.http.services.emoji-draw-reverb.loadbalancer.server.port=8080
 
   queue:
-    <<: *php-build
-    restart: unless-stopped
-    command: php artisan queue:listen --tries=3
-    env_file:
-      - .env
-    networks:
-      - webgateway
-    depends_on:
-      mongodb:
-        condition: service_healthy
+    <<: *php
+    command: php artisan queue:work --tries=3
+
+  scheduler:
+    <<: *php
+    command: php artisan schedule:work
 
   mongodb:
     image: mongo:8.0
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${DB_ROOT_DATABASE}
       MONGODB_DB: ${DB_DATABASE}
       MONGODB_USER: ${DB_USERNAME}
       MONGODB_PASS: ${DB_PASSWORD}
-      MONGO_INITDB_DATABASE: ${DB_ROOT_DATABASE}
     networks:
       - default
-      - webgateway
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh --quiet
       interval: 30s
@@ -105,26 +118,6 @@ services:
       - mongodb:/data/db
       - ./database/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
 
-  mongo-express:
-    image: mongo-express
-    restart: unless-stopped
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_ROOT_USERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_ROOT_PASSWORD}
-      ME_CONFIG_MONGODB_URL: ${DB_ROOT_URI}
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.emoji-db.rule=Host(`emoji-db.${DOMAIN}`)
-      - traefik.http.routers.emoji-db.entrypoints=websecure
-      - traefik.http.routers.emoji-db.tls=true
-      - traefik.docker.network=webgateway
-    networks:
-      - webgateway
-      - default
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
 networks:
   webgateway:
     external: true
@@ -133,6 +126,4 @@ volumes:
   mongodb:
     driver: local
   laravel-storage-production:
-    driver: local
-  laravel-public-assets:
     driver: local
